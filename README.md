@@ -1,4 +1,4 @@
-# Socratic Dialogue MCP Server
+# dialogue-mcp
 
 A Model Context Protocol (MCP) server that provides Socratic dialogue capabilities for problem-solving and decision-making. The server uses Streamable HTTP transport for modern MCP client compatibility.
 

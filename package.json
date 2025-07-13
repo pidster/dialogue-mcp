@@ -1,5 +1,5 @@
 {
-  "name": "socratic-dialogue-mcp-server",
+  "name": "dialogue-mcp",
   "version": "0.1.0",
   "description": "MCP server providing Socratic dialogue capabilities for problem-solving and decision tracking",
   "main": "dist/index.js",

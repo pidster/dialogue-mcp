@@ -54,7 +54,7 @@ const responseAnalyzer = new ResponseAnalyzer(patternLibrary);
 function createMCPServer() {
   const server = new Server(
     {
-      name: 'socratic-dialogue-mcp-server',
+      name: 'dialogue-mcp',
       version: '0.1.0',
     },
     {
@@ -577,7 +577,7 @@ function createMCPServer() {
 app.get('/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
-    name: 'socratic-dialogue-mcp-server',
+    name: 'dialogue-mcp',
     version: '0.1.0',
     transport: 'streamable-http',
     sessions: sessions.size,
@@ -650,7 +650,7 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || 'localhost';
 
 app.listen(Number(PORT), HOST, () => {
-  console.log(`Socratic Dialogue MCP Server (Streamable HTTP) running at http://${HOST}:${PORT}`);
+  console.log(`dialogue-mcp (Streamable HTTP) running at http://${HOST}:${PORT}`);
   console.log(`MCP endpoint: http://${HOST}:${PORT}/mcp`);
   console.log(`Health check: http://${HOST}:${PORT}/health`);
   console.log('');
