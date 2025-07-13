@@ -28,7 +28,7 @@ describe('Streamable HTTP E2E Tests', () => {
       serverProcess.stdout?.on('data', (data) => {
         const output = data.toString();
         console.log('Server output:', output);
-        if (output.includes('running at')) {
+        if (output.includes('started on')) {
           clearTimeout(timeout);
           resolve();
         }

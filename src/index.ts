@@ -19,6 +19,9 @@ import { QuestionSelector } from './patterns/QuestionSelector.js';
 import { TemplateEngine } from './patterns/TemplateEngine.js';
 import { DialogueFlowManager } from './dialogue/DialogueFlowManager.js';
 import { ResponseAnalyzer } from './dialogue/ResponseAnalyzer.js';
+import { ResourceTemplateEngine } from './resources/ResourceTemplateEngine.js';
+import { ResourceTemplateLibrary } from './resources/ResourceTemplateLibrary.js';
+import { SessionSummaryGenerator } from './resources/generators/SessionSummaryGenerator.js';
 import { 
   DialogueSession, 
   DialogueContext, 
@@ -96,6 +99,31 @@ const questionSelector = new QuestionSelector(patternLibrary);
 const templateEngine = new TemplateEngine();
 const flowManager = new DialogueFlowManager();
 const responseAnalyzer = new ResponseAnalyzer(patternLibrary);
+
+// Initialize resource template system
+const resourceTemplateLibrary = new ResourceTemplateLibrary();
+const resourceTemplateEngine = new ResourceTemplateEngine();
+
+// Register generators with fallback for demo purposes
+const sessionSummaryGenerator = new SessionSummaryGenerator(async (sessionId: string) => {
+  const session = sessions.get(sessionId);
+  const sessionTurns = turns.get(sessionId) || [];
+  
+  // If session exists, return real data
+  if (session) {
+    return { session, turns: sessionTurns };
+  }
+  
+  // For demo purposes, provide mock data for unknown sessions
+  // In production, you'd return null and handle the error
+  return null; // Let the generator use its default mock data
+});
+
+// Register template with generator
+const sessionSummaryTemplate = resourceTemplateLibrary.getTemplate('session-summary');
+if (sessionSummaryTemplate) {
+  resourceTemplateEngine.registerTemplate(sessionSummaryTemplate, sessionSummaryGenerator);
+}
 
 // Create MCP server factory
 function createMCPServer() {
@@ -233,6 +261,27 @@ function createMCPServer() {
       description: 'All available questioning patterns',
       mimeType: 'application/json',
     });
+
+    // Add template resources
+    const templates = resourceTemplateLibrary.getAllTemplates();
+    for (const template of templates) {
+      for (const example of template.examples) {
+        resources.push({
+          uri: example,
+          name: `${template.name} Example`,
+          description: template.description,
+          mimeType: 'application/json',
+        });
+      }
+    }
+
+    // Add template library resource
+    resources.push({
+      uri: 'templates://library',
+      name: 'Template Library',
+      description: 'All available resource templates',
+      mimeType: 'application/json',
+    });
     
     return { resources };
   });
@@ -273,6 +322,46 @@ function createMCPServer() {
           },
         ],
       };
+    }
+
+    if (uri === 'templates://library') {
+      const templates = resourceTemplateLibrary.getAllTemplates();
+      return {
+        contents: [
+          {
+            uri,
+            mimeType: 'application/json',
+            text: JSON.stringify(templates, null, 2),
+          },
+        ],
+      };
+    }
+
+    // Handle template resources
+    if (uri.startsWith('template://')) {
+      try {
+        // Extract format from query parameters or use default
+        const urlObj = new URL(`http://localhost${uri.replace('template:', '')}`);
+        const format = (urlObj.searchParams.get('format') || 'json') as any;
+        
+        const result = await resourceTemplateEngine.generateResource(uri, format);
+        
+        if (!result.success) {
+          throw new Error(`Template generation failed: ${result.errors?.join(', ')}`);
+        }
+
+        return {
+          contents: [
+            {
+              uri,
+              mimeType: result.mimeType,
+              text: result.content,
+            },
+          ],
+        };
+      } catch (error) {
+        throw new Error(`Template resource error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
     
     throw new Error(`Resource not found: ${uri}`);
