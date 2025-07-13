@@ -5,17 +5,15 @@
 import pino from 'pino';
 import type { Logger } from 'pino';
 import { hostname } from 'os';
+import { config } from '../config/config.js';
 
 // Determine if we're in production
 const isProduction = process.env.NODE_ENV === 'production';
 const isDevelopment = !isProduction;
 
-// Log level from environment or defaults
-const logLevel = process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
-
 // Base logger configuration
 const loggerOptions: pino.LoggerOptions = {
-  level: logLevel,
+  level: config.logging.level,
   base: {
     service: 'dialogue-mcp',
     environment: process.env.NODE_ENV || 'development',
@@ -25,7 +23,7 @@ const loggerOptions: pino.LoggerOptions = {
   timestamp: pino.stdTimeFunctions.isoTime,
   // Redact sensitive fields
   redact: {
-    paths: ['password', 'token', 'apiKey', 'secret'],
+    paths: config.logging.redactedFields,
     remove: true,
   },
   // Serializers for common objects
@@ -50,8 +48,8 @@ const loggerOptions: pino.LoggerOptions = {
 };
 
 // Add transport configuration based on environment
-// Use pino-pretty only if explicitly requested via PRETTY_LOGS env var
-if (isDevelopment && process.env.PRETTY_LOGS === 'true') {
+// Use pino-pretty only if explicitly requested via configuration
+if (isDevelopment && config.logging.pretty) {
   loggerOptions.transport = {
     target: 'pino-pretty',
     options: {
@@ -69,10 +67,7 @@ const baseLogger = pino(loggerOptions);
 /**
  * Create a child logger with session context
  */
-export function createSessionLogger(
-  sessionId: string,
-  transportSessionId?: string
-): Logger {
+export function createSessionLogger(sessionId: string, transportSessionId?: string): Logger {
   return baseLogger.child({
     sessionId,
     transportSessionId,
@@ -103,11 +98,14 @@ export function logOperationMetrics(
   metadata?: Record<string, unknown>
 ): void {
   const duration = Date.now() - startTime;
-  logger.info({
-    operation,
-    duration,
-    ...metadata,
-  }, `Operation completed: ${operation}`);
+  logger.info(
+    {
+      operation,
+      duration,
+      ...metadata,
+    },
+    `Operation completed: ${operation}`
+  );
 }
 
 /**
@@ -120,13 +118,16 @@ export function logPatternSelection(
   alternatives: string[],
   flowState: string
 ): void {
-  logger.debug({
-    operation: 'pattern_selection',
-    pattern,
-    confidence,
-    alternatives,
-    flowState,
-  }, 'Selected question pattern');
+  logger.debug(
+    {
+      operation: 'pattern_selection',
+      pattern,
+      confidence,
+      alternatives,
+      flowState,
+    },
+    'Selected question pattern'
+  );
 }
 
 /**
@@ -141,15 +142,18 @@ export function logResponseAnalysis(
   assumptions: string[],
   contradictions: string[]
 ): void {
-  logger.info({
-    operation: 'response_analysis',
-    clarity,
-    completeness,
-    insightsCount,
-    extractedConcepts: concepts,
-    detectedAssumptions: assumptions,
-    identifiedContradictions: contradictions,
-  }, 'Analyzed user response');
+  logger.info(
+    {
+      operation: 'response_analysis',
+      clarity,
+      completeness,
+      insightsCount,
+      extractedConcepts: concepts,
+      detectedAssumptions: assumptions,
+      identifiedContradictions: contradictions,
+    },
+    'Analyzed user response'
+  );
 }
 
 /**
@@ -165,12 +169,15 @@ export function logSessionInsights(
     contradictions: number;
   }
 ): void {
-  logger.info({
-    operation: 'session_insights',
-    turnCount,
-    depth,
-    discoveries,
-  }, 'Generated session insights');
+  logger.info(
+    {
+      operation: 'session_insights',
+      turnCount,
+      depth,
+      discoveries,
+    },
+    'Generated session insights'
+  );
 }
 
 /**
@@ -181,10 +188,13 @@ export function logError(
   error: Error | unknown,
   context?: Record<string, unknown>
 ): void {
-  logger.error({
-    error: error instanceof Error ? error : { message: String(error) },
-    ...context,
-  }, error instanceof Error ? error.message : 'An error occurred');
+  logger.error(
+    {
+      error: error instanceof Error ? error : { message: String(error) },
+      ...context,
+    },
+    error instanceof Error ? error.message : 'An error occurred'
+  );
 }
 
 export default baseLogger;

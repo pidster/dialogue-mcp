@@ -39,10 +39,13 @@ import logger, {
   logSessionInsights,
   logError
 } from './utils/logger.js';
+import { config } from './config/config.js';
 
 // Express app setup
 const app = express();
-app.use(cors());
+if (config.server.enableCors) {
+  app.use(cors());
+}
 app.use(express.json());
 
 // Request logging middleware
@@ -316,14 +319,14 @@ function createMCPServer() {
           description: (args?.description as string) || '',
           status: SessionStatus.ACTIVE,
           config: {
-            maxDepth: 10,
-            maxTurns: 50,
-            focusAreas: [(args?.category as ContextCategory) || ContextCategory.GENERAL],
-            enabledPatterns: patternLibrary.getAllPatterns().map(p => p.type),
-            adaptToExpertise: true,
-            autoFollowUp: true,
-            requireValidation: false,
-            persistDecisions: true,
+            maxDepth: config.session.maxDepth,
+            maxTurns: config.session.maxTurns,
+            focusAreas: [(args?.category as ContextCategory) || config.session.defaultCategory],
+            enabledPatterns: config.flow.enabledPatterns,
+            adaptToExpertise: config.session.adaptToExpertise,
+            autoFollowUp: config.session.autoFollowUp,
+            requireValidation: config.session.requireValidation,
+            persistDecisions: config.session.persistDecisions,
           },
           participants: [],
           objectives: [],
@@ -812,15 +815,15 @@ app.all('/mcp', async (req, res): Promise<void> => {
 });
 
 // Start HTTP server
-const PORT = process.env.PORT || 3000;
-const HOST = process.env.HOST || 'localhost';
-
-app.listen(Number(PORT), HOST, () => {
+app.listen(config.server.port, config.server.host, () => {
   logger.info({
     operation: 'server_start',
-    host: HOST,
-    port: PORT,
-    mcpEndpoint: `http://${HOST}:${PORT}/mcp`,
-    healthEndpoint: `http://${HOST}:${PORT}/health`,
-  }, `dialogue-mcp server started on http://${HOST}:${PORT}`);
+    host: config.server.host,
+    port: config.server.port,
+    mcpEndpoint: `http://${config.server.host}:${config.server.port}/mcp`,
+    healthEndpoint: `http://${config.server.host}:${config.server.port}/health`,
+    requestTimeout: config.server.requestTimeout,
+    maxDepth: config.session.maxDepth,
+    maxTurns: config.session.maxTurns,
+  }, `dialogue-mcp server started on http://${config.server.host}:${config.server.port}`);
 });

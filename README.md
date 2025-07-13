@@ -348,6 +348,63 @@ The server uses Pino for high-performance structured logging, providing producti
 - **Optional pretty printing** for local development
 
 ### Configuration
+
+The server supports extensive configuration through environment variables:
+
+#### Server Configuration
+```bash
+# Server host and port
+HOST=localhost PORT=3000 npm start
+
+# Request timeout (milliseconds)
+REQUEST_TIMEOUT_MS=30000 npm start
+
+# Enable CORS
+ENABLE_CORS=true npm start
+```
+
+#### Session Configuration
+```bash
+# Maximum depth and turns per session
+SESSION_MAX_DEPTH=10 SESSION_MAX_TURNS=50 npm start
+
+# Default category and expertise level
+DEFAULT_CATEGORY=general DEFAULT_EXPERTISE=intermediate npm start
+
+# Session behavior
+ADAPT_TO_EXPERTISE=true AUTO_FOLLOW_UP=true npm start
+REQUIRE_VALIDATION=false PERSIST_DECISIONS=true npm start
+
+# Session timeout (minutes)
+SESSION_TIMEOUT_MINUTES=60 npm start
+```
+
+#### Flow State Configuration
+```bash
+# Maximum turns allowed in each dialogue state
+MAX_TURNS_EXPLORING=12 npm start
+MAX_TURNS_DEEPENING=10 npm start
+MAX_TURNS_CLARIFYING=8 npm start
+MAX_TURNS_SYNTHESIZING=8 npm start
+MAX_TURNS_CONCLUDING=6 npm start
+```
+
+#### Pattern Depth Limits
+```bash
+# Maximum depth for each questioning pattern
+PATTERN_DEPTH_DEFINITION_SEEKING=3 npm start
+PATTERN_DEPTH_ASSUMPTION_EXCAVATION=4 npm start
+PATTERN_DEPTH_CONSISTENCY_TESTING=3 npm start
+PATTERN_DEPTH_CONCRETE_INSTANTIATION=2 npm start
+PATTERN_DEPTH_NECESSITY_TESTING=3 npm start
+PATTERN_DEPTH_CONCEPTUAL_CLARITY=2 npm start
+PATTERN_DEPTH_EPISTEMIC_HUMILITY=3 npm start
+PATTERN_DEPTH_SOLUTION_SPACE_MAPPING=3 npm start
+PATTERN_DEPTH_IMPACT_ANALYSIS=4 npm start
+PATTERN_DEPTH_VALUE_CLARIFICATION=3 npm start
+```
+
+#### Logging Configuration
 ```bash
 # Set log level (debug, info, warn, error)
 LOG_LEVEL=debug npm start
@@ -358,11 +415,11 @@ NODE_ENV=production npm start
 # Development mode with pretty printing (multi-line, colored)
 PRETTY_LOGS=true npm start
 
-# Development mode without pretty printing (single-line JSON, default)
-npm start
-
 # Custom hostname
 HOSTNAME=my-server npm start
+
+# Redacted fields in logs (comma-separated)
+LOG_REDACTED_FIELDS=password,token,apiKey npm start
 ```
 
 ### Log Structure

@@ -2,18 +2,10 @@
  * Dialogue flow management for tracking and transitioning conversation states
  */
 
-import {
-  PatternType,
-} from '../types/patterns.js';
-import {
-  DialogueContext,
-  DialogueSession,
-  DialogueTurn,
-} from '../types/sessions.js';
-import {
-  UUID,
-  ConfidenceLevel,
-} from '../types/common.js';
+import { PatternType } from '../types/patterns.js';
+import { DialogueContext, DialogueSession, DialogueTurn } from '../types/sessions.js';
+import { config } from '../config/config.js';
+import { UUID, ConfidenceLevel } from '../types/common.js';
 
 /**
  * Flow state transitions and rules
@@ -44,11 +36,11 @@ export interface FlowAnalysisResult {
 /**
  * Dialogue flow state
  */
-export type DialogueFlowState = 
-  | 'exploring' 
-  | 'deepening' 
-  | 'clarifying' 
-  | 'synthesizing' 
+export type DialogueFlowState =
+  | 'exploring'
+  | 'deepening'
+  | 'clarifying'
+  | 'synthesizing'
   | 'concluding';
 
 /**
@@ -121,12 +113,17 @@ export class DialogueFlowManager {
   ): FlowAnalysisResult {
     const currentState = session.context.conversationFlow;
     const stateConfidence = this.calculateStateConfidence(session, recentTurns);
-    
-    const stateMetrics = this.calculateStateMetrics(session.id, currentState, recentTurns, patternHistory);
+
+    const stateMetrics = this.calculateStateMetrics(
+      session.id,
+      currentState,
+      recentTurns,
+      patternHistory
+    );
     const progressAssessment = this.assessProgress(session, recentTurns, stateMetrics);
-    
+
     const suggestedTransition = this.suggestTransition(session, stateMetrics, progressAssessment);
-    const transitionConfidence = suggestedTransition 
+    const transitionConfidence = suggestedTransition
       ? this.calculateTransitionConfidence(currentState, suggestedTransition, stateMetrics)
       : undefined;
 
@@ -271,22 +268,22 @@ export class DialogueFlowManager {
   ): ConfidenceLevel {
     const currentState = session.context.conversationFlow;
     const preferredPatterns = this.config.states[currentState].preferredPatterns;
-    
+
     // Analyze recent pattern alignment
     const recentPatterns = recentTurns.slice(-5).map(turn => turn.questionPattern);
-    const alignedPatterns = recentPatterns.filter(pattern => 
+    const alignedPatterns = recentPatterns.filter(pattern =>
       preferredPatterns.includes(pattern)
     ).length;
-    
-    const patternAlignment = recentPatterns.length > 0 
-      ? alignedPatterns / recentPatterns.length 
-      : 0.5;
+
+    const patternAlignment =
+      recentPatterns.length > 0 ? alignedPatterns / recentPatterns.length : 0.5;
 
     // Factor in turn progression and insights
-    const avgInsights = recentTurns.length > 0 
-      ? recentTurns.reduce((sum, turn) => sum + turn.insights.length, 0) / recentTurns.length
-      : 0;
-    
+    const avgInsights =
+      recentTurns.length > 0
+        ? recentTurns.reduce((sum, turn) => sum + turn.insights.length, 0) / recentTurns.length
+        : 0;
+
     const insightFactor = Math.min(avgInsights / 2, 1); // Normalize to 0-1
 
     // Combine factors
@@ -303,7 +300,7 @@ export class DialogueFlowManager {
     patternHistory: readonly PatternType[]
   ): FlowStateMetrics {
     const stateKey = `${sessionId}:${state}`;
-    
+
     // Count turns in current state (from recent history)
     let turnsInState = 0;
     for (let i = recentTurns.length - 1; i >= 0; i--) {
@@ -322,21 +319,23 @@ export class DialogueFlowManager {
     const insightsGenerated = recentTurns.reduce((sum, turn) => sum + turn.insights.length, 0);
 
     // Calculate average depth
-    const averageDepth = recentTurns.length > 0
-      ? recentTurns.reduce((sum, turn) => sum + turn.depth, 0) / recentTurns.length
-      : 0;
+    const averageDepth =
+      recentTurns.length > 0
+        ? recentTurns.reduce((sum, turn) => sum + turn.depth, 0) / recentTurns.length
+        : 0;
 
     // Calculate variety score
     const uniquePatterns = new Set(patternHistory.slice(-10)).size;
     const varietyScore = Math.min(uniquePatterns / 6, 1.0); // Normalize against reasonable max
 
     // Calculate effectiveness
-    const avgSatisfaction = recentTurns.length > 0
-      ? recentTurns
-          .filter(turn => turn.userSatisfaction !== undefined)
-          .reduce((sum, turn) => sum + (turn.userSatisfaction || 0), 0) / recentTurns.length
-      : 0.5;
-    
+    const avgSatisfaction =
+      recentTurns.length > 0
+        ? recentTurns
+            .filter(turn => turn.userSatisfaction !== undefined)
+            .reduce((sum, turn) => sum + (turn.userSatisfaction || 0), 0) / recentTurns.length
+        : 0.5;
+
     const effectiveness = Math.min(avgSatisfaction / 5, 1.0); // Normalize 1-5 scale to 0-1
 
     const metrics: FlowStateMetrics = {
@@ -350,7 +349,7 @@ export class DialogueFlowManager {
 
     // Cache metrics
     this.stateMetrics.set(stateKey, metrics);
-    
+
     return metrics;
   }
 
@@ -366,15 +365,14 @@ export class DialogueFlowManager {
     const totalObjectives = session.objectives.length;
 
     // Calculate objective alignment
-    const objectiveAlignment = totalObjectives > 0 
-      ? objectivesCompleted / totalObjectives 
-      : 0.5;
+    const objectiveAlignment = totalObjectives > 0 ? objectivesCompleted / totalObjectives : 0.5;
 
     // Calculate insight quality based on recent insights
     const recentInsights = recentTurns.flatMap(turn => turn.insights);
-    const insightQuality = recentInsights.length > 0 
-      ? Math.min(recentInsights.length / (recentTurns.length || 1), 1.0)
-      : 0;
+    const insightQuality =
+      recentInsights.length > 0
+        ? Math.min(recentInsights.length / (recentTurns.length || 1), 1.0)
+        : 0;
 
     // Participant engagement from satisfaction scores
     const participantEngagement = stateMetrics.effectiveness;
@@ -383,12 +381,11 @@ export class DialogueFlowManager {
     const readinessForTransition = this.calculateTransitionReadiness(session, stateMetrics);
 
     // Overall progress combines multiple factors
-    const overallProgress = (
+    const overallProgress =
       objectiveAlignment * 0.3 +
       insightQuality * 0.25 +
       participantEngagement * 0.25 +
-      stateMetrics.varietyScore * 0.2
-    );
+      stateMetrics.varietyScore * 0.2;
 
     // Completion likelihood based on progress and remaining objectives
     const completionLikelihood = Math.min(
@@ -415,7 +412,7 @@ export class DialogueFlowManager {
     progressAssessment: ProgressAssessment
   ): DialogueFlowState | undefined {
     const currentState = session.context.conversationFlow;
-    
+
     // Don't suggest transition if we're effective in current state
     if (stateMetrics.effectiveness > 0.7 && progressAssessment.readinessForTransition < 0.6) {
       return undefined;
@@ -428,25 +425,25 @@ export class DialogueFlowManager {
           return 'deepening';
         }
         break;
-      
+
       case 'deepening':
         if (stateMetrics.insightsGenerated > 3 || progressAssessment.insightQuality > 0.7) {
           return 'clarifying';
         }
         break;
-      
+
       case 'clarifying':
         if (progressAssessment.objectiveAlignment > 0.6) {
           return 'synthesizing';
         }
         break;
-      
+
       case 'synthesizing':
         if (progressAssessment.overallProgress > 0.8) {
           return 'concluding';
         }
         break;
-      
+
       case 'concluding':
         // Stay in concluding state
         return undefined;
@@ -494,7 +491,9 @@ export class DialogueFlowManager {
 
     // State-specific recommendations
     if (stateMetrics.effectiveness < 0.4) {
-      recommendations.push(`Consider different patterns - current effectiveness is low in ${currentState} state`);
+      recommendations.push(
+        `Consider different patterns - current effectiveness is low in ${currentState} state`
+      );
     }
 
     if (stateMetrics.varietyScore < 0.3) {
@@ -502,12 +501,16 @@ export class DialogueFlowManager {
     }
 
     if (progressAssessment.participantEngagement < 0.5) {
-      recommendations.push('Focus on improving participant engagement through more relevant questions');
+      recommendations.push(
+        'Focus on improving participant engagement through more relevant questions'
+      );
     }
 
     // Transition recommendations
     if (suggestedTransition) {
-      recommendations.push(`Consider transitioning to ${suggestedTransition} state for better progress`);
+      recommendations.push(
+        `Consider transitioning to ${suggestedTransition} state for better progress`
+      );
     }
 
     // Progress-specific recommendations
@@ -516,7 +519,9 @@ export class DialogueFlowManager {
     }
 
     if (progressAssessment.insightQuality < 0.4) {
-      recommendations.push('Focus on generating higher quality insights through deeper questioning');
+      recommendations.push(
+        'Focus on generating higher quality insights through deeper questioning'
+      );
     }
 
     return recommendations;
@@ -554,7 +559,9 @@ export class DialogueFlowManager {
 
     // Check minimum turns requirement
     if (context.turnCount < validTransition.minTurns) {
-      warnings.push(`Transition may be premature - minimum ${validTransition.minTurns} turns recommended`);
+      warnings.push(
+        `Transition may be premature - minimum ${validTransition.minTurns} turns recommended`
+      );
     }
 
     // Check maximum turns if specified
@@ -573,7 +580,7 @@ export class DialogueFlowManager {
    */
   private isRapidTransition(stateHistory: readonly DialogueFlowState[]): boolean {
     if (stateHistory.length < 3) return false;
-    
+
     // Check if last 3 states are all different
     const recent = stateHistory.slice(-3);
     return new Set(recent).size === 3;
@@ -583,7 +590,13 @@ export class DialogueFlowManager {
    * Check if this is a backwards transition
    */
   private isBackTransition(fromState: DialogueFlowState, toState: DialogueFlowState): boolean {
-    const stateOrder: DialogueFlowState[] = ['exploring', 'deepening', 'clarifying', 'synthesizing', 'concluding'];
+    const stateOrder: DialogueFlowState[] = [
+      'exploring',
+      'deepening',
+      'clarifying',
+      'synthesizing',
+      'concluding',
+    ];
     const fromIndex = stateOrder.indexOf(fromState);
     const toIndex = stateOrder.indexOf(toState);
     return toIndex < fromIndex;
@@ -595,7 +608,7 @@ export class DialogueFlowManager {
   private getNextLogicalState(currentState: DialogueFlowState): DialogueFlowState {
     const progressionMap: Record<DialogueFlowState, DialogueFlowState> = {
       exploring: 'deepening',
-      deepening: 'clarifying', 
+      deepening: 'clarifying',
       clarifying: 'synthesizing',
       synthesizing: 'concluding',
       concluding: 'concluding', // Stay in final state
@@ -628,18 +641,16 @@ export class DialogueFlowManager {
     stateMetrics: FlowStateMetrics
   ): ConfidenceLevel {
     const stateConfig = this.config.states[session.context.conversationFlow];
-    
+
     // Factor in insights generated vs required
-    const insightRatio = stateConfig.minInsightsRequired > 0 
-      ? Math.min(stateMetrics.insightsGenerated / stateConfig.minInsightsRequired, 1.0)
-      : 1.0;
+    const insightRatio =
+      stateConfig.minInsightsRequired > 0
+        ? Math.min(stateMetrics.insightsGenerated / stateConfig.minInsightsRequired, 1.0)
+        : 1.0;
 
     // Factor in variety and effectiveness
-    const readiness = (
-      insightRatio * 0.4 +
-      stateMetrics.varietyScore * 0.3 +
-      stateMetrics.effectiveness * 0.3
-    );
+    const readiness =
+      insightRatio * 0.4 + stateMetrics.varietyScore * 0.3 + stateMetrics.effectiveness * 0.3;
 
     return Math.min(readiness, 1.0);
   }
@@ -657,7 +668,7 @@ export class DialogueFlowManager {
             PatternType.SOLUTION_SPACE_MAPPING,
             PatternType.EPISTEMIC_HUMILITY,
           ],
-          maxTurnsInState: 12,
+          maxTurnsInState: config.flow.maxTurnsInState.exploring,
           minInsightsRequired: 2,
           transitionTriggers: ['multiple_concepts_identified', 'assumptions_surfaced'],
           successCriteria: ['domain_mapped', 'key_concepts_defined'],
@@ -669,7 +680,7 @@ export class DialogueFlowManager {
             PatternType.ASSUMPTION_EXCAVATION,
             PatternType.IMPACT_ANALYSIS,
           ],
-          maxTurnsInState: 10,
+          maxTurnsInState: config.flow.maxTurnsInState.deepening,
           minInsightsRequired: 3,
           transitionTriggers: ['contradictions_found', 'deep_insights_generated'],
           successCriteria: ['assumptions_tested', 'consistency_validated'],
@@ -680,7 +691,7 @@ export class DialogueFlowManager {
             PatternType.CONCEPTUAL_CLARITY,
             PatternType.DEFINITION_SEEKING,
           ],
-          maxTurnsInState: 8,
+          maxTurnsInState: config.flow.maxTurnsInState.clarifying,
           minInsightsRequired: 2,
           transitionTriggers: ['definitions_clarified', 'examples_provided'],
           successCriteria: ['concepts_clarified', 'examples_concrete'],
@@ -691,31 +702,77 @@ export class DialogueFlowManager {
             PatternType.VALUE_CLARIFICATION,
             PatternType.CONSISTENCY_TESTING,
           ],
-          maxTurnsInState: 8,
+          maxTurnsInState: config.flow.maxTurnsInState.synthesizing,
           minInsightsRequired: 2,
           transitionTriggers: ['insights_connected', 'values_clarified'],
           successCriteria: ['insights_synthesized', 'priorities_clear'],
         },
         concluding: {
-          preferredPatterns: [
-            PatternType.VALUE_CLARIFICATION,
-            PatternType.IMPACT_ANALYSIS,
-          ],
-          maxTurnsInState: 6,
+          preferredPatterns: [PatternType.VALUE_CLARIFICATION, PatternType.IMPACT_ANALYSIS],
+          maxTurnsInState: config.flow.maxTurnsInState.concluding,
           minInsightsRequired: 1,
           transitionTriggers: ['conclusions_reached'],
           successCriteria: ['objectives_met', 'decisions_informed'],
         },
       },
       transitions: [
-        { from: 'exploring', to: 'deepening', condition: 'sufficient_exploration', confidence: 0.8, triggeredBy: [PatternType.ASSUMPTION_EXCAVATION], minTurns: 3 },
-        { from: 'deepening', to: 'clarifying', condition: 'insights_generated', confidence: 0.8, triggeredBy: [PatternType.CONSISTENCY_TESTING], minTurns: 2 },
-        { from: 'clarifying', to: 'synthesizing', condition: 'concepts_clear', confidence: 0.8, triggeredBy: [PatternType.CONCRETE_INSTANTIATION], minTurns: 2 },
-        { from: 'synthesizing', to: 'concluding', condition: 'ready_to_conclude', confidence: 0.8, triggeredBy: [PatternType.VALUE_CLARIFICATION], minTurns: 2 },
+        {
+          from: 'exploring',
+          to: 'deepening',
+          condition: 'sufficient_exploration',
+          confidence: 0.8,
+          triggeredBy: [PatternType.ASSUMPTION_EXCAVATION],
+          minTurns: 3,
+        },
+        {
+          from: 'deepening',
+          to: 'clarifying',
+          condition: 'insights_generated',
+          confidence: 0.8,
+          triggeredBy: [PatternType.CONSISTENCY_TESTING],
+          minTurns: 2,
+        },
+        {
+          from: 'clarifying',
+          to: 'synthesizing',
+          condition: 'concepts_clear',
+          confidence: 0.8,
+          triggeredBy: [PatternType.CONCRETE_INSTANTIATION],
+          minTurns: 2,
+        },
+        {
+          from: 'synthesizing',
+          to: 'concluding',
+          condition: 'ready_to_conclude',
+          confidence: 0.8,
+          triggeredBy: [PatternType.VALUE_CLARIFICATION],
+          minTurns: 2,
+        },
         // Back transitions for recovery
-        { from: 'deepening', to: 'exploring', condition: 'need_more_exploration', confidence: 0.6, triggeredBy: [PatternType.EPISTEMIC_HUMILITY], minTurns: 1 },
-        { from: 'clarifying', to: 'deepening', condition: 'need_deeper_analysis', confidence: 0.6, triggeredBy: [PatternType.NECESSITY_TESTING], minTurns: 1 },
-        { from: 'synthesizing', to: 'clarifying', condition: 'concepts_unclear', confidence: 0.6, triggeredBy: [PatternType.CONCEPTUAL_CLARITY], minTurns: 1 },
+        {
+          from: 'deepening',
+          to: 'exploring',
+          condition: 'need_more_exploration',
+          confidence: 0.6,
+          triggeredBy: [PatternType.EPISTEMIC_HUMILITY],
+          minTurns: 1,
+        },
+        {
+          from: 'clarifying',
+          to: 'deepening',
+          condition: 'need_deeper_analysis',
+          confidence: 0.6,
+          triggeredBy: [PatternType.NECESSITY_TESTING],
+          minTurns: 1,
+        },
+        {
+          from: 'synthesizing',
+          to: 'clarifying',
+          condition: 'concepts_unclear',
+          confidence: 0.6,
+          triggeredBy: [PatternType.CONCEPTUAL_CLARITY],
+          minTurns: 1,
+        },
       ],
       adaptToContext: true,
       enforceMinimums: true,

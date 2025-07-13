@@ -2,10 +2,7 @@
  * Pattern scoring algorithms for intelligent question selection
  */
 
-import {
-  PatternType,
-  QuestionContext,
-} from '../types/patterns.js';
+import { PatternType, QuestionContext } from '../types/patterns.js';
 import { ContextCategory, ExpertiseLevel, ConfidenceLevel } from '../types/common.js';
 import { PatternLibrary } from './PatternLibrary.js';
 
@@ -13,7 +10,12 @@ import { PatternLibrary } from './PatternLibrary.js';
  * Extended context for scoring that includes dialogue state
  */
 export interface ScoringContext extends QuestionContext {
-  readonly conversationFlow?: 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding';
+  readonly conversationFlow?:
+    | 'exploring'
+    | 'deepening'
+    | 'clarifying'
+    | 'synthesizing'
+    | 'concluding';
   readonly currentDepth: number;
   readonly turnCount: number;
 }
@@ -82,7 +84,7 @@ export class PatternScorer {
     config?: Partial<ScoringConfig>
   ): ScoringFactors & { totalScore: ConfidenceLevel } {
     const weights = { ...this.defaultWeights, ...config?.weights };
-    
+
     const contextRelevance = this.calculateContextRelevance(pattern, context);
     const expertiseMatch = this.calculateExpertiseMatch(pattern, context, config);
     const flowAppropriateness = this.calculateFlowAppropriateness(pattern, context);
@@ -92,11 +94,11 @@ export class PatternScorer {
 
     const totalScore = Math.min(
       contextRelevance * weights.contextRelevance +
-      expertiseMatch * weights.expertiseMatch +
-      flowAppropriateness * weights.flowAppropriateness +
-      novelty * weights.novelty +
-      effectiveness * weights.effectiveness +
-      strategicValue * weights.strategicValue,
+        expertiseMatch * weights.expertiseMatch +
+        flowAppropriateness * weights.flowAppropriateness +
+        novelty * weights.novelty +
+        effectiveness * weights.effectiveness +
+        strategicValue * weights.strategicValue,
       1.0
     );
 
@@ -114,10 +116,7 @@ export class PatternScorer {
   /**
    * Calculate context relevance score
    */
-  public calculateContextRelevance(
-    pattern: PatternType,
-    context: ScoringContext
-  ): ConfidenceLevel {
+  public calculateContextRelevance(pattern: PatternType, context: ScoringContext): ConfidenceLevel {
     const patternInfo = this.patternLibrary.getPattern(pattern);
     if (!patternInfo) return 0;
 
@@ -169,11 +168,11 @@ export class PatternScorer {
 
     // Calculate distance and apply tolerance
     const distance = Math.abs(patternLevel - userLevel);
-    
+
     if (distance <= tolerance) {
       // Within tolerance - calculate match quality
       if (distance === 0) return 1.0; // Perfect match
-      return Math.max(1.0 - (distance * 0.2), 0.6); // Gradual decrease
+      return Math.max(1.0 - distance * 0.2, 0.6); // Gradual decrease
     } else {
       // Outside tolerance - low score but not zero
       return Math.max(0.3 - (distance - tolerance) * 0.1, 0.1);
@@ -189,11 +188,11 @@ export class PatternScorer {
   ): ConfidenceLevel {
     const flowState = context.conversationFlow || 'exploring';
     const currentDepth = context.currentDepth;
-    
+
     // Pattern appropriateness by flow state
     const flowMappings = this.getFlowPatternMappings();
     const statePatterns = flowMappings[flowState];
-    
+
     let baseScore = statePatterns?.includes(pattern) ? 0.9 : 0.4;
 
     // Depth-based adjustments
@@ -216,13 +215,13 @@ export class PatternScorer {
     config?: Partial<ScoringConfig>
   ): ConfidenceLevel {
     const importance = config?.noveltyImportance || 1.0;
-    
+
     // Count recent usage (last 10 patterns)
     const recentUsage = recentPatterns.slice(-10).filter(p => p === pattern).length;
-    
+
     // Calculate freshness (1.0 = never used recently, decreases with usage)
-    const freshness = Math.max(1.0 - (recentUsage * 0.2), 0.1);
-    
+    const freshness = Math.max(1.0 - recentUsage * 0.2, 0.1);
+
     // Apply importance weighting
     return freshness * importance + (1 - importance) * 0.5; // Blend with neutral score
   }
@@ -255,7 +254,10 @@ export class PatternScorer {
   /**
    * Get context-specific pattern preferences
    */
-  private getContextPatternPreferences(): Record<ContextCategory, Partial<Record<PatternType, number>>> {
+  private getContextPatternPreferences(): Record<
+    ContextCategory,
+    Partial<Record<PatternType, number>>
+  > {
     return {
       [ContextCategory.PROJECT_INCEPTION]: {
         [PatternType.DEFINITION_SEEKING]: 0.15,
@@ -331,11 +333,11 @@ export class PatternScorer {
     // Simple keyword-based alignment
     const patternKeywords = this.getPatternKeywords(pattern);
     const focusWords = focus.toLowerCase().split(/\s+/);
-    
-    const overlap = focusWords.filter(word => 
+
+    const overlap = focusWords.filter(word =>
       patternKeywords.some(keyword => keyword.includes(word) || word.includes(keyword))
     ).length;
-    
+
     return Math.min(overlap * 0.02, 0.1); // Small bonus for alignment
   }
 
@@ -366,10 +368,7 @@ export class PatternScorer {
         PatternType.VALUE_CLARIFICATION,
         PatternType.CONSISTENCY_TESTING,
       ],
-      concluding: [
-        PatternType.VALUE_CLARIFICATION,
-        PatternType.IMPACT_ANALYSIS,
-      ],
+      concluding: [PatternType.VALUE_CLARIFICATION, PatternType.IMPACT_ANALYSIS],
     };
   }
 
@@ -393,7 +392,7 @@ export class PatternScorer {
       ];
       return synthesisPatterns.includes(pattern) ? 0.05 : -0.05;
     }
-    
+
     return 0; // Neutral for medium depths
   }
 
@@ -403,13 +402,10 @@ export class PatternScorer {
   private calculateTurnApproppriateness(pattern: PatternType, turnCount: number): number {
     // Long conversations should move toward conclusion
     if (turnCount > 20) {
-      const concludingPatterns = [
-        PatternType.VALUE_CLARIFICATION,
-        PatternType.IMPACT_ANALYSIS,
-      ];
+      const concludingPatterns = [PatternType.VALUE_CLARIFICATION, PatternType.IMPACT_ANALYSIS];
       return concludingPatterns.includes(pattern) ? 0.1 : -0.05;
     }
-    
+
     return 0;
   }
 
@@ -421,11 +417,11 @@ export class PatternScorer {
     if (context.extractedConcepts.length === 0 && pattern === PatternType.DEFINITION_SEEKING) {
       return 0.1; // High value when no concepts identified yet
     }
-    
+
     if (context.detectedAssumptions.length === 0 && pattern === PatternType.ASSUMPTION_EXCAVATION) {
       return 0.1; // High value when no assumptions detected yet
     }
-    
+
     return 0;
   }
 

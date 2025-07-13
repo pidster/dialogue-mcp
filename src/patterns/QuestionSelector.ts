@@ -2,10 +2,7 @@
  * Intelligent question selector with adaptive logic for Socratic dialogue
  */
 
-import {
-  PatternType,
-  PatternEffectiveness,
-} from '../types/patterns.js';
+import { PatternType, PatternEffectiveness } from '../types/patterns.js';
 import { DialogueContext } from '../types/sessions.js';
 import { ContextCategory, ExpertiseLevel, ConfidenceLevel, UUID } from '../types/common.js';
 import { PatternLibrary } from './PatternLibrary.js';
@@ -66,7 +63,13 @@ export interface SelectionResult {
 export interface FlowAnalysis {
   readonly currentState: 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding';
   readonly stateConfidence: ConfidenceLevel;
-  readonly suggestedTransition?: 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding' | undefined;
+  readonly suggestedTransition?:
+    | 'exploring'
+    | 'deepening'
+    | 'clarifying'
+    | 'synthesizing'
+    | 'concluding'
+    | undefined;
   readonly patternsUsedInState: readonly PatternType[];
   readonly averageDepth: number;
   readonly varietyScore: ConfidenceLevel; // How varied the patterns have been
@@ -111,7 +114,7 @@ export class QuestionSelector {
   ): SelectionResult {
     const eligiblePatterns = this.filterEligiblePatterns(context, constraints);
     const scoredPatterns = this.scorePatterns(eligiblePatterns, context, constraints);
-    
+
     // Sort by score descending
     scoredPatterns.sort((a, b) => b.score - a.score);
 
@@ -145,16 +148,16 @@ export class QuestionSelector {
   ): ScoredPattern[] {
     const eligiblePatterns = this.filterEligiblePatterns(context, constraints);
     const scoredPatterns = this.scorePatterns(eligiblePatterns, context, constraints);
-    
+
     // Sort by score and return top N with variety
     scoredPatterns.sort((a, b) => b.score - a.score);
-    
+
     const selected: ScoredPattern[] = [];
     const usedTypes = new Set<PatternType>();
 
     for (const pattern of scoredPatterns) {
       if (selected.length >= count) break;
-      
+
       // Ensure variety by avoiding duplicate pattern types
       if (!usedTypes.has(pattern.pattern)) {
         selected.push(pattern);
@@ -175,7 +178,7 @@ export class QuestionSelector {
     const currentState = this.determineFlowState(context, patternHistory);
     const stateConfidence = this.calculateStateConfidence(currentState, patternHistory);
     const suggestedTransition = this.suggestFlowTransition(currentState, context, patternHistory);
-    
+
     const patternsUsedInState = this.getPatternsUsedInCurrentState(
       currentState,
       patternHistory.slice(-5) // Last 5 patterns
@@ -207,9 +210,9 @@ export class QuestionSelector {
     const satisfactionScore = outcome.userSatisfaction || 3; // Default neutral
     const insightScore = Math.min(outcome.insightsGenerated / 3, 1); // Normalize to 0-1
 
-    const newAvgSatisfaction = 
+    const newAvgSatisfaction =
       (existing.averageUserSatisfaction * existing.timesUsed + satisfactionScore) / newTimesUsed;
-    const newAvgInsightQuality = 
+    const newAvgInsightQuality =
       (existing.averageInsightQuality * existing.timesUsed + insightScore) / newTimesUsed;
 
     const updatedEffectiveness: PatternEffectiveness = {
@@ -240,13 +243,10 @@ export class QuestionSelector {
   /**
    * Get pattern effectiveness for a specific context
    */
-  public getPatternEffectiveness(
-    pattern: PatternType,
-    context: SelectionContext
-  ): ConfidenceLevel {
+  public getPatternEffectiveness(pattern: PatternType, context: SelectionContext): ConfidenceLevel {
     const contextKey = this.getContextKey(context, pattern);
     const effectiveness = this.effectivenessData.get(contextKey);
-    
+
     if (!effectiveness) {
       return 0.5; // Default moderate effectiveness
     }
@@ -267,8 +267,7 @@ export class QuestionSelector {
     constraints?: SelectionConstraints
   ): PatternType[] {
     const allPatterns = this.patternLibrary.getAllPatterns();
-    
-    
+
     return allPatterns
       .filter(pattern => {
         // Check expertise level compatibility
@@ -321,12 +320,12 @@ export class QuestionSelector {
 
       // Calculate weighted score
       const score = Math.min(
-        (contextRelevance * 0.3 +
-         expertiseMatch * 0.2 +
-         flowAppropriate * 0.25 +
-         effectiveness * 0.15 +
-         freshness * 0.1 +
-         preferenceBonus), 
+        contextRelevance * 0.3 +
+          expertiseMatch * 0.2 +
+          flowAppropriate * 0.25 +
+          effectiveness * 0.15 +
+          freshness * 0.1 +
+          preferenceBonus,
         1.0
       );
 
@@ -418,7 +417,7 @@ export class QuestionSelector {
 
     // Perfect match gets 1.0, each level difference reduces by 0.2
     const levelDifference = Math.abs(patternLevel - userLevel);
-    return Math.max(1.0 - (levelDifference * 0.2), 0.2);
+    return Math.max(1.0 - levelDifference * 0.2, 0.2);
   }
 
   /**
@@ -450,15 +449,12 @@ export class QuestionSelector {
         PatternType.VALUE_CLARIFICATION,
         PatternType.CONSISTENCY_TESTING,
       ],
-      concluding: [
-        PatternType.VALUE_CLARIFICATION,
-        PatternType.IMPACT_ANALYSIS,
-      ],
+      concluding: [PatternType.VALUE_CLARIFICATION, PatternType.IMPACT_ANALYSIS],
     };
 
     const currentFlow = context.conversationFlow || 'exploring';
     const appropriatePatterns = flowPatterns[currentFlow];
-    
+
     return appropriatePatterns.includes(pattern) ? 0.9 : 0.4;
   }
 
@@ -468,9 +464,9 @@ export class QuestionSelector {
   private calculateFreshness(pattern: PatternType, sessionId: string): ConfidenceLevel {
     const recent = this.recentPatterns.get(sessionId) || [];
     const recentUsage = recent.filter(p => p === pattern).length;
-    
+
     // Fresh pattern gets 1.0, each recent use reduces freshness
-    return Math.max(1.0 - (recentUsage * 0.3), 0.1);
+    return Math.max(1.0 - recentUsage * 0.3, 0.1);
   }
 
   /**
@@ -490,19 +486,19 @@ export class QuestionSelector {
 
     // Add context-specific follow-ups based on current pattern and context
     const contextFollowUps = this.getContextSpecificFollowUps(currentPattern, context);
-    
+
     // Combine and prioritize
     const allFollowUps = [...baseFollowUps, ...contextFollowUps];
-    
+
     // Remove duplicates and prioritize based on context relevance
     const uniqueFollowUps = [...new Set(allFollowUps)];
-    
+
     // Score each follow-up for relevance
     const scoredFollowUps = uniqueFollowUps.map(pattern => ({
       pattern,
       score: this.scoreFollowUpRelevance(pattern, currentPattern, context),
     }));
-    
+
     // Return top 3 highest scoring follow-ups
     return scoredFollowUps
       .sort((a, b) => b.score - a.score)
@@ -619,12 +615,12 @@ export class QuestionSelector {
   private trackPatternUsage(sessionId: string, pattern: PatternType): void {
     const recent = this.recentPatterns.get(sessionId) || [];
     recent.push(pattern);
-    
+
     // Keep only last 10 patterns
     if (recent.length > 10) {
       recent.shift();
     }
-    
+
     this.recentPatterns.set(sessionId, recent);
   }
 
@@ -682,16 +678,25 @@ export class QuestionSelector {
    */
   private getPatternSpecificReasoning(pattern: PatternType): string | undefined {
     const patternReasons: Record<PatternType, string> = {
-      [PatternType.DEFINITION_SEEKING]: 'Clarifies ambiguous terminology and establishes common understanding',
-      [PatternType.ASSUMPTION_EXCAVATION]: 'Uncovers hidden beliefs that may impact decision-making',
-      [PatternType.CONSISTENCY_TESTING]: 'Identifies potential contradictions in requirements or design',
-      [PatternType.CONCRETE_INSTANTIATION]: 'Transforms abstract concepts into testable, specific examples',
-      [PatternType.NECESSITY_TESTING]: 'Questions complexity and identifies truly essential requirements',
-      [PatternType.CONCEPTUAL_CLARITY]: 'Distinguishes between similar concepts to prevent confusion',
-      [PatternType.EPISTEMIC_HUMILITY]: 'Acknowledges knowledge gaps and identifies areas needing research',
-      [PatternType.SOLUTION_SPACE_MAPPING]: 'Explores alternative approaches to avoid premature optimization',
+      [PatternType.DEFINITION_SEEKING]:
+        'Clarifies ambiguous terminology and establishes common understanding',
+      [PatternType.ASSUMPTION_EXCAVATION]:
+        'Uncovers hidden beliefs that may impact decision-making',
+      [PatternType.CONSISTENCY_TESTING]:
+        'Identifies potential contradictions in requirements or design',
+      [PatternType.CONCRETE_INSTANTIATION]:
+        'Transforms abstract concepts into testable, specific examples',
+      [PatternType.NECESSITY_TESTING]:
+        'Questions complexity and identifies truly essential requirements',
+      [PatternType.CONCEPTUAL_CLARITY]:
+        'Distinguishes between similar concepts to prevent confusion',
+      [PatternType.EPISTEMIC_HUMILITY]:
+        'Acknowledges knowledge gaps and identifies areas needing research',
+      [PatternType.SOLUTION_SPACE_MAPPING]:
+        'Explores alternative approaches to avoid premature optimization',
       [PatternType.IMPACT_ANALYSIS]: 'Evaluates consequences and ripple effects of decisions',
-      [PatternType.VALUE_CLARIFICATION]: 'Prioritizes competing objectives and clarifies trade-offs',
+      [PatternType.VALUE_CLARIFICATION]:
+        'Prioritizes competing objectives and clarifies trade-offs',
     };
 
     return patternReasons[pattern];
@@ -702,7 +707,7 @@ export class QuestionSelector {
    */
   private initializeEffectivenessData(): void {
     const allPatterns = this.patternLibrary.getAllPatterns();
-    
+
     for (const pattern of allPatterns) {
       for (const category of Object.values(ContextCategory)) {
         for (const expertise of Object.values(ExpertiseLevel)) {
@@ -756,7 +761,10 @@ export class QuestionSelector {
   /**
    * Update context success score using exponential moving average
    */
-  private updateContextSuccess(current: ConfidenceLevel, newScore: ConfidenceLevel): ConfidenceLevel {
+  private updateContextSuccess(
+    current: ConfidenceLevel,
+    newScore: ConfidenceLevel
+  ): ConfidenceLevel {
     const alpha = 0.2; // Learning rate
     return current * (1 - alpha) + newScore * alpha;
   }
@@ -764,7 +772,10 @@ export class QuestionSelector {
   /**
    * Update expertise success score using exponential moving average
    */
-  private updateExpertiseSuccess(current: ConfidenceLevel, newScore: ConfidenceLevel): ConfidenceLevel {
+  private updateExpertiseSuccess(
+    current: ConfidenceLevel,
+    newScore: ConfidenceLevel
+  ): ConfidenceLevel {
     const alpha = 0.2; // Learning rate
     return current * (1 - alpha) + newScore * alpha;
   }
@@ -772,10 +783,7 @@ export class QuestionSelector {
   /**
    * Check if expertise levels are compatible
    */
-  private isExpertiseCompatible(
-    patternLevel: ExpertiseLevel,
-    userLevel: ExpertiseLevel
-  ): boolean {
+  private isExpertiseCompatible(patternLevel: ExpertiseLevel, userLevel: ExpertiseLevel): boolean {
     const levels = {
       [ExpertiseLevel.BEGINNER]: 0,
       [ExpertiseLevel.INTERMEDIATE]: 1,
@@ -795,7 +803,7 @@ export class QuestionSelector {
   ): 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding' {
     // Analyze recent patterns to determine flow state
     const recentPatterns = patternHistory.slice(-5); // Last 5 patterns
-    
+
     // Count patterns by their typical flow association
     const patternCounts = {
       exploring: 0,
@@ -831,11 +839,18 @@ export class QuestionSelector {
 
     // Find the most common pattern type
     const maxCount = Math.max(...Object.values(patternCounts));
-    const dominantState = Object.entries(patternCounts).find(([, count]) => count === maxCount)?.[0];
+    const dominantState = Object.entries(patternCounts).find(
+      ([, count]) => count === maxCount
+    )?.[0];
 
     // Use pattern-based detection if clear pattern exists
     if (maxCount >= 2 && dominantState) {
-      return dominantState as 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding';
+      return dominantState as
+        | 'exploring'
+        | 'deepening'
+        | 'clarifying'
+        | 'synthesizing'
+        | 'concluding';
     }
 
     // Fall back to depth and turn-based heuristics
@@ -854,9 +869,9 @@ export class QuestionSelector {
     patternHistory: readonly PatternType[]
   ): ConfidenceLevel {
     if (patternHistory.length === 0) return 0.5; // Neutral confidence with no history
-    
+
     const recentPatterns = patternHistory.slice(-5);
-    
+
     // Define expected patterns for each state
     const statePatterns: Record<string, PatternType[]> = {
       exploring: [
@@ -881,28 +896,25 @@ export class QuestionSelector {
         PatternType.VALUE_CLARIFICATION,
         PatternType.CONSISTENCY_TESTING,
       ],
-      concluding: [
-        PatternType.VALUE_CLARIFICATION,
-        PatternType.IMPACT_ANALYSIS,
-      ],
+      concluding: [PatternType.VALUE_CLARIFICATION, PatternType.IMPACT_ANALYSIS],
     };
 
     const expectedPatterns = statePatterns[state] || [];
-    
+
     // Calculate how many recent patterns match the expected state
-    const matchingPatterns = recentPatterns.filter(pattern => 
+    const matchingPatterns = recentPatterns.filter(pattern =>
       expectedPatterns.includes(pattern)
     ).length;
-    
+
     // Calculate confidence based on pattern alignment
     const alignmentRatio = recentPatterns.length > 0 ? matchingPatterns / recentPatterns.length : 0;
-    
+
     // High alignment = high confidence, low alignment = low confidence
     const baseConfidence = alignmentRatio * 0.8 + 0.2; // Scale to 0.2-1.0 range
-    
+
     // Boost confidence if we have more data points
     const dataBonus = Math.min(recentPatterns.length / 5, 1) * 0.1;
-    
+
     return Math.min(baseConfidence + dataBonus, 1.0);
   }
 
@@ -915,26 +927,26 @@ export class QuestionSelector {
     patternHistory: readonly PatternType[]
   ): 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding' | undefined {
     const recentPatterns = patternHistory.slice(-5);
-    
+
     // Count patterns in current state vs others
     const currentStatePatterns = this.getPatternsForFlowState(currentState);
-    const recentCurrentStateCount = recentPatterns.filter(p => 
+    const recentCurrentStateCount = recentPatterns.filter(p =>
       currentStatePatterns.includes(p)
     ).length;
-    
+
     // Suggest transition if:
     // 1. We've used many patterns from current state (pattern saturation)
     // 2. We have sufficient depth
     // 3. We have enough concepts/insights to move forward
-    
-    const patternSaturation = recentPatterns.length > 0 ? 
-      recentCurrentStateCount / recentPatterns.length : 0;
-    
-    const shouldTransition = 
+
+    const patternSaturation =
+      recentPatterns.length > 0 ? recentCurrentStateCount / recentPatterns.length : 0;
+
+    const shouldTransition =
       patternSaturation > 0.6 || // >60% patterns from current state
       context.currentDepth > 4 || // Sufficient depth
       context.extractedConcepts.length > 3; // Sufficient insights
-    
+
     if (!shouldTransition) {
       return undefined;
     }
@@ -949,7 +961,13 @@ export class QuestionSelector {
     };
 
     const nextState = progressions[currentState];
-    return nextState as 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding' | undefined;
+    return nextState as
+      | 'exploring'
+      | 'deepening'
+      | 'clarifying'
+      | 'synthesizing'
+      | 'concluding'
+      | undefined;
   }
 
   /**
@@ -979,12 +997,9 @@ export class QuestionSelector {
         PatternType.VALUE_CLARIFICATION,
         PatternType.CONSISTENCY_TESTING,
       ],
-      concluding: [
-        PatternType.VALUE_CLARIFICATION,
-        PatternType.IMPACT_ANALYSIS,
-      ],
+      concluding: [PatternType.VALUE_CLARIFICATION, PatternType.IMPACT_ANALYSIS],
     };
-    
+
     return statePatterns[state] || [];
   }
 
@@ -993,8 +1008,7 @@ export class QuestionSelector {
    */
   private shouldSkipToSynthesis(context: SelectionContext): boolean {
     // Skip to synthesis if we have many concepts and assumptions already
-    return context.extractedConcepts.length > 5 && 
-           context.detectedAssumptions.length > 3;
+    return context.extractedConcepts.length > 5 && context.detectedAssumptions.length > 3;
   }
 
   /**
@@ -1002,21 +1016,27 @@ export class QuestionSelector {
    */
   private needsClarification(context: SelectionContext): boolean {
     // Need clarification if we have concepts but they seem unclear
-    return context.extractedConcepts.length > 0 && 
-           context.knownDefinitions.length < context.extractedConcepts.length / 2;
+    return (
+      context.extractedConcepts.length > 0 &&
+      context.knownDefinitions.length < context.extractedConcepts.length / 2
+    );
   }
 
   /**
    * Check if dialogue should conclude
    */
-  private shouldConclude(context: SelectionContext, patternHistory: readonly PatternType[]): boolean {
+  private shouldConclude(
+    context: SelectionContext,
+    patternHistory: readonly PatternType[]
+  ): boolean {
     // Should conclude if conversation is long and we have good insights
-    return context.turnCount > 15 && 
-           context.extractedConcepts.length > 4 &&
-           patternHistory.filter(p => 
-             p === PatternType.VALUE_CLARIFICATION || 
-             p === PatternType.IMPACT_ANALYSIS
-           ).length > 2;
+    return (
+      context.turnCount > 15 &&
+      context.extractedConcepts.length > 4 &&
+      patternHistory.filter(
+        p => p === PatternType.VALUE_CLARIFICATION || p === PatternType.IMPACT_ANALYSIS
+      ).length > 2
+    );
   }
 
   /**
@@ -1035,10 +1055,10 @@ export class QuestionSelector {
    */
   private calculateVarietyScore(patternHistory: readonly PatternType[]): ConfidenceLevel {
     if (patternHistory.length === 0) return 1.0;
-    
+
     const uniquePatterns = new Set(patternHistory.slice(-10)); // Last 10 patterns
     const recentPatterns = patternHistory.slice(-10).length;
-    
+
     return recentPatterns > 0 ? uniquePatterns.size / recentPatterns : 1.0;
   }
 
@@ -1049,7 +1069,7 @@ export class QuestionSelector {
     // Simple heuristic - could be enhanced with objective tracking
     const baseProgress = Math.min(context.currentDepth / 8, 1.0);
     const insightBonus = context.extractedConcepts.length * 0.1;
-    
+
     return Math.min(baseProgress + insightBonus, 1.0);
   }
 }

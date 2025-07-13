@@ -7,6 +7,7 @@ import { Request, Response } from 'express';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
 import logger, { logError } from './utils/logger.js';
+import { config } from './config/config.js';
 import { EventEmitter } from 'events';
 
 export class StreamableHttpServerTransport implements Transport {
@@ -84,7 +85,7 @@ export class StreamableHttpServerTransport implements Transport {
           if (!res.headersSent) {
             res.status(504).json({ error: 'Response timeout' });
           }
-        }, 30000); // 30 second timeout
+        }, config.server.requestTimeout);
       } else {
         // This is a notification (no id), acknowledge receipt immediately
         res.status(200).json({ status: 'ok' });

@@ -8,10 +8,7 @@ import {
   QuestionContext,
   GeneratedQuestion,
 } from '../types/patterns.js';
-import {
-  ConfidenceLevel,
-  ContextCategory,
-} from '../types/common.js';
+import { ConfidenceLevel, ContextCategory } from '../types/common.js';
 import { PatternLibrary } from '../patterns/PatternLibrary.js';
 
 /**
@@ -95,7 +92,7 @@ export class ResponseAnalyzer {
       contextSensitive: true,
       ...config,
     };
-    
+
     // Initialize pattern library for future advanced analysis
     void this.patternLibrary;
   }
@@ -155,7 +152,10 @@ export class ResponseAnalyzer {
   /**
    * Analyze response quality
    */
-  public analyzeQuality(response: string, expectedType: string): {
+  public analyzeQuality(
+    response: string,
+    expectedType: string
+  ): {
     clarity: ConfidenceLevel;
     completeness: ConfidenceLevel;
     depth: ConfidenceLevel;
@@ -210,7 +210,10 @@ export class ResponseAnalyzer {
   /**
    * Analyze response characteristics
    */
-  private analyzeCharacteristics(response: string, context: QuestionContext): ResponseCharacteristics {
+  private analyzeCharacteristics(
+    response: string,
+    context: QuestionContext
+  ): ResponseCharacteristics {
     const length = response.length;
     const complexity = this.calculateComplexity(response);
     const specificity = this.calculateSpecificity(response);
@@ -255,13 +258,19 @@ export class ResponseAnalyzer {
     // Limit results and prioritize by confidence
     return filteredInsights
       .sort((a, b) => b.confidence - a.confidence)
-      .slice(0, this.config.maxConcepts + this.config.maxAssumptions + this.config.maxContradictions);
+      .slice(
+        0,
+        this.config.maxConcepts + this.config.maxAssumptions + this.config.maxContradictions
+      );
   }
 
   /**
    * Extract concepts from response
    */
-  private extractConcepts(response: string, _context?: QuestionContext): readonly InsightExtraction[] {
+  private extractConcepts(
+    response: string,
+    _context?: QuestionContext
+  ): readonly InsightExtraction[] {
     const concepts: InsightExtraction[] = [];
 
     // Technical terms and domain concepts
@@ -275,7 +284,8 @@ export class ResponseAnalyzer {
     for (const pattern of technicalPatterns) {
       const matches = response.match(pattern) || [];
       for (const match of matches) {
-        if (match.length > 2) { // Filter out very short matches
+        if (match.length > 2) {
+          // Filter out very short matches
           concepts.push({
             type: 'concept',
             content: match.trim(),
@@ -290,7 +300,10 @@ export class ResponseAnalyzer {
 
     // Domain-specific concepts based on context
     if (_context?.currentFocus) {
-      const focusRelatedConcepts = this.extractFocusRelatedConcepts(response, _context.currentFocus);
+      const focusRelatedConcepts = this.extractFocusRelatedConcepts(
+        response,
+        _context.currentFocus
+      );
       concepts.push(...focusRelatedConcepts);
     }
 
@@ -300,7 +313,10 @@ export class ResponseAnalyzer {
   /**
    * Extract assumptions from response
    */
-  private extractAssumptions(response: string, _context?: QuestionContext): readonly InsightExtraction[] {
+  private extractAssumptions(
+    response: string,
+    _context?: QuestionContext
+  ): readonly InsightExtraction[] {
     const assumptions: InsightExtraction[] = [];
 
     // Explicit assumption indicators
@@ -334,7 +350,10 @@ export class ResponseAnalyzer {
   /**
    * Extract contradictions from response
    */
-  private extractContradictions(response: string, _context?: QuestionContext): readonly InsightExtraction[] {
+  private extractContradictions(
+    response: string,
+    _context?: QuestionContext
+  ): readonly InsightExtraction[] {
     const contradictions: InsightExtraction[] = [];
 
     // Direct contradiction indicators
@@ -368,7 +387,10 @@ export class ResponseAnalyzer {
   /**
    * Extract requirements from response
    */
-  private extractRequirements(response: string, _context?: QuestionContext): readonly InsightExtraction[] {
+  private extractRequirements(
+    response: string,
+    _context?: QuestionContext
+  ): readonly InsightExtraction[] {
     const requirements: InsightExtraction[] = [];
 
     const requirementPatterns = [
@@ -397,7 +419,10 @@ export class ResponseAnalyzer {
   /**
    * Extract constraints from response
    */
-  private extractConstraints(response: string, _context?: QuestionContext): readonly InsightExtraction[] {
+  private extractConstraints(
+    response: string,
+    _context?: QuestionContext
+  ): readonly InsightExtraction[] {
     const constraints: InsightExtraction[] = [];
 
     const constraintPatterns = [
@@ -436,21 +461,27 @@ export class ResponseAnalyzer {
 
     // Pattern-specific follow-ups based on insights
     for (const insight of insights) {
-      const followUps = this.getPatternSpecificFollowUps(insight, _question.patternType, characteristics);
+      const followUps = this.getPatternSpecificFollowUps(
+        insight,
+        _question.patternType,
+        characteristics
+      );
       recommendations.push(...followUps);
     }
 
     // Context-driven recommendations
-    const contextRecommendations = this.getContextDrivenRecommendations(context, characteristics, insights);
+    const contextRecommendations = this.getContextDrivenRecommendations(
+      context,
+      characteristics,
+      insights
+    );
     recommendations.push(...contextRecommendations);
 
     // Quality-driven recommendations
     const qualityRecommendations = this.getQualityDrivenRecommendations(characteristics, _question);
     recommendations.push(...qualityRecommendations);
 
-    return recommendations
-      .sort((a, b) => b.priority - a.priority)
-      .slice(0, 5); // Top 5 recommendations
+    return recommendations.sort((a, b) => b.priority - a.priority).slice(0, 5); // Top 5 recommendations
   }
 
   /**
@@ -460,37 +491,40 @@ export class ResponseAnalyzer {
     response: string,
     insights: readonly InsightExtraction[],
     characteristics: ResponseCharacteristics
-  ): { completeness: ConfidenceLevel; depth: ConfidenceLevel; relevance: ConfidenceLevel; actionability: ConfidenceLevel } {
+  ): {
+    completeness: ConfidenceLevel;
+    depth: ConfidenceLevel;
+    relevance: ConfidenceLevel;
+    actionability: ConfidenceLevel;
+  } {
     // Completeness based on response length and structure
     const completeness = Math.min(
       (response.length / 200) * 0.5 + // Length factor
-      (characteristics.specificity * 0.3) + // Specificity factor  
-      (insights.length / 5) * 0.2, // Insights factor
+        characteristics.specificity * 0.3 + // Specificity factor
+        (insights.length / 5) * 0.2, // Insights factor
       1.0
     );
 
     // Depth based on complexity and technicality
     const depth = Math.min(
-      characteristics.complexity * 0.6 +
-      characteristics.technicality * 0.4,
+      characteristics.complexity * 0.6 + characteristics.technicality * 0.4,
       1.0
     );
 
     // Relevance based on insight confidence and engagement
-    const avgInsightConfidence = insights.length > 0 
-      ? insights.reduce((sum, i) => sum + i.confidence, 0) / insights.length
-      : 0.5;
-    
-    const relevance = Math.min(
-      avgInsightConfidence * 0.7 +
-      characteristics.engagement * 0.3,
-      1.0
-    );
+    const avgInsightConfidence =
+      insights.length > 0
+        ? insights.reduce((sum, i) => sum + i.confidence, 0) / insights.length
+        : 0.5;
+
+    const relevance = Math.min(avgInsightConfidence * 0.7 + characteristics.engagement * 0.3, 1.0);
 
     // Actionability based on specificity and concrete content
     const actionability = Math.min(
       characteristics.specificity * 0.6 +
-      (insights.filter(i => i.type === 'requirement' || i.type === 'constraint').length / insights.length) * 0.4,
+        (insights.filter(i => i.type === 'requirement' || i.type === 'constraint').length /
+          insights.length) *
+          0.4,
       1.0
     );
 
@@ -504,25 +538,32 @@ export class ResponseAnalyzer {
     const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 0);
     const avgSentenceLength = sentences.reduce((sum, s) => sum + s.length, 0) / sentences.length;
     const complexWords = response.match(/\b\w{8,}\b/g)?.length || 0;
-    
-    const clarityScore = Math.max(1.0 - (avgSentenceLength / 200) - (complexWords / response.split(/\s+/).length), 0);
+
+    const clarityScore = Math.max(
+      1.0 - avgSentenceLength / 200 - complexWords / response.split(/\s+/).length,
+      0
+    );
     return Math.min(clarityScore, 1.0);
   }
 
   private calculateCompleteness(response: string, _expectedType: string): ConfidenceLevel {
     const wordCount = response.split(/\s+/).length;
     const hasStructure = /(?:first|second|also|moreover|however|because|therefore)/i.test(response);
-    
+
     let completeness = Math.min(wordCount / 50, 1.0); // Base on word count
     if (hasStructure) completeness = Math.min(completeness + 0.2, 1.0);
-    
+
     return completeness;
   }
 
   private calculateDepth(response: string): ConfidenceLevel {
-    const causalWords = (response.match(/\b(?:because|since|due to|leads to|results in|causes)\b/gi) || []).length;
-    const analysisWords = (response.match(/\b(?:analyze|consider|evaluate|compare|contrast)\b/gi) || []).length;
-    
+    const causalWords = (
+      response.match(/\b(?:because|since|due to|leads to|results in|causes)\b/gi) || []
+    ).length;
+    const analysisWords = (
+      response.match(/\b(?:analyze|consider|evaluate|compare|contrast)\b/gi) || []
+    ).length;
+
     return Math.min((causalWords + analysisWords) / 10, 1.0);
   }
 
@@ -537,7 +578,7 @@ export class ResponseAnalyzer {
     };
 
     const keywords = typeKeywords[expectedType] || [];
-    const matches = keywords.filter(keyword => 
+    const matches = keywords.filter(keyword =>
       response.toLowerCase().includes(keyword.toLowerCase())
     ).length;
 
@@ -549,18 +590,27 @@ export class ResponseAnalyzer {
 
   private calculateComplexity(response: string): ConfidenceLevel {
     const sentences = response.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const avgLength = sentences.reduce((sum, s) => sum + s.split(/\s+/).length, 0) / sentences.length;
+    const avgLength =
+      sentences.reduce((sum, s) => sum + s.split(/\s+/).length, 0) / sentences.length;
     return Math.min(avgLength / 20, 1.0);
   }
 
   private calculateSpecificity(response: string): ConfidenceLevel {
-    const specificWords = (response.match(/\b(?:exactly|precisely|specifically|particular|detailed|concrete)\b/gi) || []).length;
-    const examples = (response.match(/\b(?:for example|such as|like|instance|specifically)\b/gi) || []).length;
+    const specificWords = (
+      response.match(/\b(?:exactly|precisely|specifically|particular|detailed|concrete)\b/gi) || []
+    ).length;
+    const examples = (
+      response.match(/\b(?:for example|such as|like|instance|specifically)\b/gi) || []
+    ).length;
     return Math.min((specificWords + examples) / 5, 1.0);
   }
 
-  private detectEmotionalTone(response: string): 'neutral' | 'positive' | 'negative' | 'uncertain' | 'confident' {
-    const uncertain = /\b(?:maybe|perhaps|possibly|might|could|uncertain|unsure)\b/gi.test(response);
+  private detectEmotionalTone(
+    response: string
+  ): 'neutral' | 'positive' | 'negative' | 'uncertain' | 'confident' {
+    const uncertain = /\b(?:maybe|perhaps|possibly|might|could|uncertain|unsure)\b/gi.test(
+      response
+    );
     const confident = /\b(?:definitely|certainly|absolutely|clearly|obviously)\b/gi.test(response);
     const negative = /\b(?:wrong|bad|problem|issue|difficult|hard)\b/gi.test(response);
     const positive = /\b(?:good|great|excellent|perfect|successful)\b/gi.test(response);
@@ -573,22 +623,30 @@ export class ResponseAnalyzer {
   }
 
   private calculateTechnicality(response: string, _context: QuestionContext): ConfidenceLevel {
-    const technicalTerms = (response.match(/\b(?:algorithm|interface|protocol|architecture|implementation|specification)\b/gi) || []).length;
+    const technicalTerms = (
+      response.match(
+        /\b(?:algorithm|interface|protocol|architecture|implementation|specification)\b/gi
+      ) || []
+    ).length;
     const wordCount = response.split(/\s+/).length;
-    return Math.min(technicalTerms / wordCount * 10, 1.0);
+    return Math.min((technicalTerms / wordCount) * 10, 1.0);
   }
 
   private detectDefensiveness(response: string): ConfidenceLevel {
-    const defensiveMarkers = (response.match(/\b(?:but|however|actually|well|obviously|of course)\b/gi) || []).length;
+    const defensiveMarkers = (
+      response.match(/\b(?:but|however|actually|well|obviously|of course)\b/gi) || []
+    ).length;
     const wordCount = response.split(/\s+/).length;
-    return Math.min(defensiveMarkers / wordCount * 20, 1.0);
+    return Math.min((defensiveMarkers / wordCount) * 20, 1.0);
   }
 
   private calculateEngagement(response: string): ConfidenceLevel {
-    const engagementMarkers = (response.match(/\b(?:interesting|think|consider|believe|feel|wonder)\b/gi) || []).length;
+    const engagementMarkers = (
+      response.match(/\b(?:interesting|think|consider|believe|feel|wonder)\b/gi) || []
+    ).length;
     const questions = (response.match(/\?/g) || []).length;
     const wordCount = response.split(/\s+/).length;
-    return Math.min((engagementMarkers + questions) / wordCount * 15, 1.0);
+    return Math.min(((engagementMarkers + questions) / wordCount) * 15, 1.0);
   }
 
   // Simplified implementations of extraction helpers
@@ -599,7 +657,11 @@ export class ResponseAnalyzer {
     return response.substring(start, end);
   }
 
-  private calculateConceptConfidence(match: string, _response: string, context?: QuestionContext): ConfidenceLevel {
+  private calculateConceptConfidence(
+    match: string,
+    _response: string,
+    context?: QuestionContext
+  ): ConfidenceLevel {
     let confidence = 0.6; // Base confidence
     if (match.length > 5) confidence += 0.1; // Longer terms more likely to be concepts
     if (/^[A-Z]/.test(match)) confidence += 0.1; // Capitalized terms
@@ -634,7 +696,7 @@ export class ResponseAnalyzer {
   private extractFocusRelatedConcepts(response: string, focus: string): InsightExtraction[] {
     const focusWords = focus.toLowerCase().split(/\s+/);
     const concepts: InsightExtraction[] = [];
-    
+
     for (const word of focusWords) {
       if (response.toLowerCase().includes(word)) {
         concepts.push({
@@ -647,7 +709,7 @@ export class ResponseAnalyzer {
         });
       }
     }
-    
+
     return concepts;
   }
 
@@ -655,7 +717,7 @@ export class ResponseAnalyzer {
     // Simplified implementation - would use more sophisticated NLP in practice
     const statements = response.split(/[.!?]+/).filter(s => s.trim().length > 10);
     const assumptions: InsightExtraction[] = [];
-    
+
     for (const statement of statements) {
       if (/\b(?:all|every|always|never|nobody|everyone)\b/i.test(statement)) {
         assumptions.push({
@@ -668,17 +730,19 @@ export class ResponseAnalyzer {
         });
       }
     }
-    
+
     return assumptions;
   }
 
   private findLogicalContradictions(response: string): InsightExtraction[] {
     // Simplified implementation - would use more sophisticated logic analysis
     const contradictions: InsightExtraction[] = [];
-    
+
     // Look for conflicting statements in same response
-    if (/\b(?:can)\b.*?\b(?:cannot|can't)\b/i.test(response) ||
-        /\b(?:will)\b.*?\b(?:won't|will not)\b/i.test(response)) {
+    if (
+      /\b(?:can)\b.*?\b(?:cannot|can't)\b/i.test(response) ||
+      /\b(?:will)\b.*?\b(?:won't|will not)\b/i.test(response)
+    ) {
       contradictions.push({
         type: 'contradiction',
         content: 'Conflicting modal statements detected',
@@ -688,7 +752,7 @@ export class ResponseAnalyzer {
         relatedPatterns: [PatternType.CONSISTENCY_TESTING],
       });
     }
-    
+
     return contradictions;
   }
 
@@ -709,19 +773,19 @@ export class ResponseAnalyzer {
     contradictions: string[]
   ): PatternType[] {
     const suggestions: PatternType[] = [];
-    
+
     if (concepts.length > 0) {
       suggestions.push(PatternType.DEFINITION_SEEKING, PatternType.CONCEPTUAL_CLARITY);
     }
-    
+
     if (assumptions.length > 0) {
       suggestions.push(PatternType.ASSUMPTION_EXCAVATION, PatternType.CONSISTENCY_TESTING);
     }
-    
+
     if (contradictions.length > 0) {
       suggestions.push(PatternType.CONSISTENCY_TESTING, PatternType.NECESSITY_TESTING);
     }
-    
+
     return [...new Set(suggestions)].slice(0, 3);
   }
 
@@ -731,7 +795,7 @@ export class ResponseAnalyzer {
     characteristics: ResponseCharacteristics
   ): FollowUpRecommendation[] {
     const recommendations: FollowUpRecommendation[] = [];
-    
+
     if (insight.type === 'concept' && characteristics.specificity < 0.5) {
       recommendations.push({
         pattern: PatternType.CONCRETE_INSTANTIATION,
@@ -741,7 +805,7 @@ export class ResponseAnalyzer {
         contextVariables: { concept: insight.content },
       });
     }
-    
+
     if (insight.type === 'assumption' && characteristics.defensiveness < 0.3) {
       recommendations.push({
         pattern: PatternType.CONSISTENCY_TESTING,
@@ -751,7 +815,7 @@ export class ResponseAnalyzer {
         contextVariables: { assumption: insight.content },
       });
     }
-    
+
     return recommendations;
   }
 
@@ -761,8 +825,11 @@ export class ResponseAnalyzer {
     _insights: readonly InsightExtraction[]
   ): FollowUpRecommendation[] {
     const recommendations: FollowUpRecommendation[] = [];
-    
-    if (context.category === ContextCategory.REQUIREMENTS_REFINEMENT && characteristics.specificity < 0.6) {
+
+    if (
+      context.category === ContextCategory.REQUIREMENTS_REFINEMENT &&
+      characteristics.specificity < 0.6
+    ) {
       recommendations.push({
         pattern: PatternType.CONCRETE_INSTANTIATION,
         priority: 0.85,
@@ -771,7 +838,7 @@ export class ResponseAnalyzer {
         contextVariables: { area: context.currentFocus },
       });
     }
-    
+
     return recommendations;
   }
 
@@ -780,7 +847,7 @@ export class ResponseAnalyzer {
     _question: GeneratedQuestion
   ): FollowUpRecommendation[] {
     const recommendations: FollowUpRecommendation[] = [];
-    
+
     if (characteristics.engagement < 0.5) {
       recommendations.push({
         pattern: PatternType.VALUE_CLARIFICATION,
@@ -790,7 +857,7 @@ export class ResponseAnalyzer {
         contextVariables: { goal: 'engagement' },
       });
     }
-    
+
     return recommendations;
   }
 }
