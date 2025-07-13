@@ -4,7 +4,7 @@
 
 import { QuestionSelector, SelectionContext, SelectionConstraints, SelectionResult } from '../../../src/patterns/QuestionSelector.js';
 import { PatternLibrary } from '../../../src/patterns/PatternLibrary.js';
-import { SocraticPatternType } from '../../../src/types/patterns.js';
+import { PatternType } from '../../../src/types/patterns.js';
 import { ContextCategory, ExpertiseLevel, ProjectPhase } from '../../../src/types/common.js';
 
 describe('QuestionSelector', () => {
@@ -58,7 +58,7 @@ describe('QuestionSelector', () => {
       
       expect(result).toBeDefined();
       expect(result.selectedPattern).toBeDefined();
-      expect(Object.values(SocraticPatternType)).toContain(result.selectedPattern);
+      expect(Object.values(PatternType)).toContain(result.selectedPattern);
       expect(result.confidence).toBeGreaterThan(0);
       expect(result.confidence).toBeLessThanOrEqual(1);
       expect(result.reasoning).toBeDefined();
@@ -103,8 +103,8 @@ describe('QuestionSelector', () => {
       expect(synthesizingResult.selectedPattern).toBeDefined();
       
       // While this isn't guaranteed due to scoring complexity, test that we get valid patterns
-      expect(Object.values(SocraticPatternType)).toContain(exploringResult.selectedPattern);
-      expect(Object.values(SocraticPatternType)).toContain(synthesizingResult.selectedPattern);
+      expect(Object.values(PatternType)).toContain(exploringResult.selectedPattern);
+      expect(Object.values(PatternType)).toContain(synthesizingResult.selectedPattern);
     });
 
     it('should consider context category in selection', () => {
@@ -131,27 +131,27 @@ describe('QuestionSelector', () => {
   describe('selectBestPattern', () => {
     it('should respect exclude constraints', () => {
       const constraints: SelectionConstraints = {
-        excludePatterns: [SocraticPatternType.DEFINITION_SEEKING],
+        excludePatterns: [PatternType.DEFINITION_SEEKING],
       };
       
       const result = questionSelector.selectBestPattern(mockContext, constraints);
       
-      expect(result.selectedPattern).not.toBe(SocraticPatternType.DEFINITION_SEEKING);
+      expect(result.selectedPattern).not.toBe(PatternType.DEFINITION_SEEKING);
       result.alternatives.forEach(alt => {
-        expect(alt.pattern).not.toBe(SocraticPatternType.DEFINITION_SEEKING);
+        expect(alt.pattern).not.toBe(PatternType.DEFINITION_SEEKING);
       });
     });
 
     it('should prefer specified patterns', () => {
       const constraints: SelectionConstraints = {
-        preferPatterns: [SocraticPatternType.ASSUMPTION_EXCAVATION],
+        preferPatterns: [PatternType.ASSUMPTION_EXCAVATION],
       };
       
       const result = questionSelector.selectBestPattern(mockContext, constraints);
       
       // Should either select the preferred pattern or have high confidence alternatives
-      const hasPreferredPattern = result.selectedPattern === SocraticPatternType.ASSUMPTION_EXCAVATION ||
-        result.alternatives.some(alt => alt.pattern === SocraticPatternType.ASSUMPTION_EXCAVATION);
+      const hasPreferredPattern = result.selectedPattern === PatternType.ASSUMPTION_EXCAVATION ||
+        result.alternatives.some(alt => alt.pattern === PatternType.ASSUMPTION_EXCAVATION);
       
       expect(hasPreferredPattern).toBe(true);
     });
@@ -190,9 +190,9 @@ describe('QuestionSelector', () => {
   describe('analyzeDialogueFlow', () => {
     it('should analyze current dialogue flow state', () => {
       const patternHistory = [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.DEFINITION_SEEKING,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.DEFINITION_SEEKING,
       ];
       
       const analysis = questionSelector.analyzeDialogueFlow(mockContext, patternHistory);
@@ -209,7 +209,7 @@ describe('QuestionSelector', () => {
     });
 
     it('should provide transition suggestions when appropriate', () => {
-      const longPatternHistory = new Array(10).fill(SocraticPatternType.DEFINITION_SEEKING);
+      const longPatternHistory = new Array(10).fill(PatternType.DEFINITION_SEEKING);
       
       const analysis = questionSelector.analyzeDialogueFlow(mockContext, longPatternHistory);
       
@@ -219,13 +219,13 @@ describe('QuestionSelector', () => {
 
     it('should calculate variety score based on pattern diversity', () => {
       const diverseHistory = [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.CONSISTENCY_TESTING,
-        SocraticPatternType.CONCRETE_INSTANTIATION,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.CONSISTENCY_TESTING,
+        PatternType.CONCRETE_INSTANTIATION,
       ];
       
-      const repetitiveHistory = new Array(10).fill(SocraticPatternType.DEFINITION_SEEKING);
+      const repetitiveHistory = new Array(10).fill(PatternType.DEFINITION_SEEKING);
       
       const diverseAnalysis = questionSelector.analyzeDialogueFlow(mockContext, diverseHistory);
       const repetitiveAnalysis = questionSelector.analyzeDialogueFlow(mockContext, repetitiveHistory);
@@ -237,7 +237,7 @@ describe('QuestionSelector', () => {
   describe('updatePatternEffectiveness', () => {
     it('should record pattern effectiveness data', () => {
       const outcome = {
-        pattern: SocraticPatternType.DEFINITION_SEEKING,
+        pattern: PatternType.DEFINITION_SEEKING,
         context: mockContext,
         userSatisfaction: 4,
         insightsGenerated: 2,
@@ -256,7 +256,7 @@ describe('QuestionSelector', () => {
     it('should improve future selections based on recorded outcomes', () => {
       // Record several positive outcomes for a specific pattern
       const positiveOutcome = {
-        pattern: SocraticPatternType.ASSUMPTION_EXCAVATION,
+        pattern: PatternType.ASSUMPTION_EXCAVATION,
         context: mockContext,
         userSatisfaction: 5,
         insightsGenerated: 3,
@@ -304,8 +304,8 @@ describe('QuestionSelector', () => {
 
     it('should handle conflicting constraints gracefully', () => {
       const conflictingConstraints: SelectionConstraints = {
-        excludePatterns: Object.values(SocraticPatternType).slice(0, 8), // Exclude most patterns
-        preferPatterns: [SocraticPatternType.DEFINITION_SEEKING], // But prefer one that might be excluded
+        excludePatterns: Object.values(PatternType).slice(0, 8), // Exclude most patterns
+        preferPatterns: [PatternType.DEFINITION_SEEKING], // But prefer one that might be excluded
         requireFreshPattern: true,
       };
       

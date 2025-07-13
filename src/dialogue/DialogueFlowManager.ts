@@ -3,7 +3,7 @@
  */
 
 import {
-  SocraticPatternType,
+  PatternType,
 } from '../types/patterns.js';
 import {
   DialogueContext,
@@ -23,7 +23,7 @@ export interface FlowTransition {
   readonly to: DialogueFlowState;
   readonly condition: string;
   readonly confidence: ConfidenceLevel;
-  readonly triggeredBy: readonly SocraticPatternType[];
+  readonly triggeredBy: readonly PatternType[];
   readonly minTurns: number;
   readonly maxTurns?: number;
 }
@@ -56,7 +56,7 @@ export type DialogueFlowState =
  */
 export interface FlowStateMetrics {
   readonly turnsInState: number;
-  readonly patternsUsed: Record<SocraticPatternType, number>;
+  readonly patternsUsed: Record<PatternType, number>;
   readonly insightsGenerated: number;
   readonly averageDepth: number;
   readonly varietyScore: ConfidenceLevel;
@@ -79,7 +79,7 @@ export interface ProgressAssessment {
  * Flow state configuration
  */
 export interface FlowStateConfig {
-  readonly preferredPatterns: readonly SocraticPatternType[];
+  readonly preferredPatterns: readonly PatternType[];
   readonly maxTurnsInState: number;
   readonly minInsightsRequired: number;
   readonly transitionTriggers: readonly string[];
@@ -117,7 +117,7 @@ export class DialogueFlowManager {
   public analyzeFlow(
     session: DialogueSession,
     recentTurns: readonly DialogueTurn[],
-    patternHistory: readonly SocraticPatternType[]
+    patternHistory: readonly PatternType[]
   ): FlowAnalysisResult {
     const currentState = session.context.conversationFlow;
     const stateConfidence = this.calculateStateConfidence(session, recentTurns);
@@ -207,7 +207,7 @@ export class DialogueFlowManager {
   /**
    * Get preferred patterns for current flow state
    */
-  public getPreferredPatterns(state: DialogueFlowState): readonly SocraticPatternType[] {
+  public getPreferredPatterns(state: DialogueFlowState): readonly PatternType[] {
     return this.config.states[state]?.preferredPatterns || [];
   }
 
@@ -300,7 +300,7 @@ export class DialogueFlowManager {
     sessionId: UUID,
     state: DialogueFlowState,
     recentTurns: readonly DialogueTurn[],
-    patternHistory: readonly SocraticPatternType[]
+    patternHistory: readonly PatternType[]
   ): FlowStateMetrics {
     const stateKey = `${sessionId}:${state}`;
     
@@ -313,8 +313,8 @@ export class DialogueFlowManager {
     }
 
     // Analyze pattern usage
-    const patternsUsed: Record<SocraticPatternType, number> = {} as Record<SocraticPatternType, number>;
-    for (const pattern of Object.values(SocraticPatternType)) {
+    const patternsUsed: Record<PatternType, number> = {} as Record<PatternType, number>;
+    for (const pattern of Object.values(PatternType)) {
       patternsUsed[pattern] = patternHistory.filter(p => p === pattern).length;
     }
 
@@ -652,10 +652,10 @@ export class DialogueFlowManager {
       states: {
         exploring: {
           preferredPatterns: [
-            SocraticPatternType.DEFINITION_SEEKING,
-            SocraticPatternType.ASSUMPTION_EXCAVATION,
-            SocraticPatternType.SOLUTION_SPACE_MAPPING,
-            SocraticPatternType.EPISTEMIC_HUMILITY,
+            PatternType.DEFINITION_SEEKING,
+            PatternType.ASSUMPTION_EXCAVATION,
+            PatternType.SOLUTION_SPACE_MAPPING,
+            PatternType.EPISTEMIC_HUMILITY,
           ],
           maxTurnsInState: 12,
           minInsightsRequired: 2,
@@ -664,10 +664,10 @@ export class DialogueFlowManager {
         },
         deepening: {
           preferredPatterns: [
-            SocraticPatternType.CONSISTENCY_TESTING,
-            SocraticPatternType.NECESSITY_TESTING,
-            SocraticPatternType.ASSUMPTION_EXCAVATION,
-            SocraticPatternType.IMPACT_ANALYSIS,
+            PatternType.CONSISTENCY_TESTING,
+            PatternType.NECESSITY_TESTING,
+            PatternType.ASSUMPTION_EXCAVATION,
+            PatternType.IMPACT_ANALYSIS,
           ],
           maxTurnsInState: 10,
           minInsightsRequired: 3,
@@ -676,9 +676,9 @@ export class DialogueFlowManager {
         },
         clarifying: {
           preferredPatterns: [
-            SocraticPatternType.CONCRETE_INSTANTIATION,
-            SocraticPatternType.CONCEPTUAL_CLARITY,
-            SocraticPatternType.DEFINITION_SEEKING,
+            PatternType.CONCRETE_INSTANTIATION,
+            PatternType.CONCEPTUAL_CLARITY,
+            PatternType.DEFINITION_SEEKING,
           ],
           maxTurnsInState: 8,
           minInsightsRequired: 2,
@@ -687,9 +687,9 @@ export class DialogueFlowManager {
         },
         synthesizing: {
           preferredPatterns: [
-            SocraticPatternType.IMPACT_ANALYSIS,
-            SocraticPatternType.VALUE_CLARIFICATION,
-            SocraticPatternType.CONSISTENCY_TESTING,
+            PatternType.IMPACT_ANALYSIS,
+            PatternType.VALUE_CLARIFICATION,
+            PatternType.CONSISTENCY_TESTING,
           ],
           maxTurnsInState: 8,
           minInsightsRequired: 2,
@@ -698,8 +698,8 @@ export class DialogueFlowManager {
         },
         concluding: {
           preferredPatterns: [
-            SocraticPatternType.VALUE_CLARIFICATION,
-            SocraticPatternType.IMPACT_ANALYSIS,
+            PatternType.VALUE_CLARIFICATION,
+            PatternType.IMPACT_ANALYSIS,
           ],
           maxTurnsInState: 6,
           minInsightsRequired: 1,
@@ -708,14 +708,14 @@ export class DialogueFlowManager {
         },
       },
       transitions: [
-        { from: 'exploring', to: 'deepening', condition: 'sufficient_exploration', confidence: 0.8, triggeredBy: [SocraticPatternType.ASSUMPTION_EXCAVATION], minTurns: 3 },
-        { from: 'deepening', to: 'clarifying', condition: 'insights_generated', confidence: 0.8, triggeredBy: [SocraticPatternType.CONSISTENCY_TESTING], minTurns: 2 },
-        { from: 'clarifying', to: 'synthesizing', condition: 'concepts_clear', confidence: 0.8, triggeredBy: [SocraticPatternType.CONCRETE_INSTANTIATION], minTurns: 2 },
-        { from: 'synthesizing', to: 'concluding', condition: 'ready_to_conclude', confidence: 0.8, triggeredBy: [SocraticPatternType.VALUE_CLARIFICATION], minTurns: 2 },
+        { from: 'exploring', to: 'deepening', condition: 'sufficient_exploration', confidence: 0.8, triggeredBy: [PatternType.ASSUMPTION_EXCAVATION], minTurns: 3 },
+        { from: 'deepening', to: 'clarifying', condition: 'insights_generated', confidence: 0.8, triggeredBy: [PatternType.CONSISTENCY_TESTING], minTurns: 2 },
+        { from: 'clarifying', to: 'synthesizing', condition: 'concepts_clear', confidence: 0.8, triggeredBy: [PatternType.CONCRETE_INSTANTIATION], minTurns: 2 },
+        { from: 'synthesizing', to: 'concluding', condition: 'ready_to_conclude', confidence: 0.8, triggeredBy: [PatternType.VALUE_CLARIFICATION], minTurns: 2 },
         // Back transitions for recovery
-        { from: 'deepening', to: 'exploring', condition: 'need_more_exploration', confidence: 0.6, triggeredBy: [SocraticPatternType.EPISTEMIC_HUMILITY], minTurns: 1 },
-        { from: 'clarifying', to: 'deepening', condition: 'need_deeper_analysis', confidence: 0.6, triggeredBy: [SocraticPatternType.NECESSITY_TESTING], minTurns: 1 },
-        { from: 'synthesizing', to: 'clarifying', condition: 'concepts_unclear', confidence: 0.6, triggeredBy: [SocraticPatternType.CONCEPTUAL_CLARITY], minTurns: 1 },
+        { from: 'deepening', to: 'exploring', condition: 'need_more_exploration', confidence: 0.6, triggeredBy: [PatternType.EPISTEMIC_HUMILITY], minTurns: 1 },
+        { from: 'clarifying', to: 'deepening', condition: 'need_deeper_analysis', confidence: 0.6, triggeredBy: [PatternType.NECESSITY_TESTING], minTurns: 1 },
+        { from: 'synthesizing', to: 'clarifying', condition: 'concepts_unclear', confidence: 0.6, triggeredBy: [PatternType.CONCEPTUAL_CLARITY], minTurns: 1 },
       ],
       adaptToContext: true,
       enforceMinimums: true,

@@ -6,6 +6,7 @@
 import { Request, Response } from 'express';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import { JSONRPCMessage } from '@modelcontextprotocol/sdk/types.js';
+import logger, { logError } from './utils/logger.js';
 import { EventEmitter } from 'events';
 
 export class StreamableHttpServerTransport implements Transport {
@@ -89,6 +90,10 @@ export class StreamableHttpServerTransport implements Transport {
         res.status(200).json({ status: 'ok' });
       }
     } catch (error) {
+      logError(logger, error, {
+        operation: 'handle_request',
+        sessionId: this.sessionId,
+      });
       res.status(400).json({ error: 'Invalid request' });
     }
   }

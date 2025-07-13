@@ -1,9 +1,9 @@
 /**
- * Response analyzer for extracting insights from user responses to Socratic questions
+ * Response analyzer for extracting insights from user responses to dialogue questions
  */
 
 import {
-  SocraticPatternType,
+  PatternType,
   ResponseAnalysis,
   QuestionContext,
   GeneratedQuestion,
@@ -35,7 +35,7 @@ export interface InsightExtraction {
   readonly confidence: ConfidenceLevel;
   readonly source: 'explicit' | 'implicit' | 'inferred';
   readonly context: string;
-  readonly relatedPatterns: readonly SocraticPatternType[];
+  readonly relatedPatterns: readonly PatternType[];
 }
 
 /**
@@ -55,7 +55,7 @@ export interface ResponseCharacteristics {
  * Follow-up recommendations
  */
 export interface FollowUpRecommendation {
-  readonly pattern: SocraticPatternType;
+  readonly pattern: PatternType;
   readonly priority: ConfidenceLevel;
   readonly reason: string;
   readonly targetInsight: string;
@@ -282,7 +282,7 @@ export class ResponseAnalyzer {
             confidence: this.calculateConceptConfidence(match, response, _context),
             source: 'explicit',
             context: this.extractSurroundingContext(response, match),
-            relatedPatterns: [SocraticPatternType.DEFINITION_SEEKING, SocraticPatternType.CONCEPTUAL_CLARITY],
+            relatedPatterns: [PatternType.DEFINITION_SEEKING, PatternType.CONCEPTUAL_CLARITY],
           });
         }
       }
@@ -319,7 +319,7 @@ export class ResponseAnalyzer {
           confidence: this.calculateAssumptionConfidence(match, response),
           source: 'explicit',
           context: this.extractSurroundingContext(response, match),
-          relatedPatterns: [SocraticPatternType.ASSUMPTION_EXCAVATION, SocraticPatternType.CONSISTENCY_TESTING],
+          relatedPatterns: [PatternType.ASSUMPTION_EXCAVATION, PatternType.CONSISTENCY_TESTING],
         });
       }
     }
@@ -353,7 +353,7 @@ export class ResponseAnalyzer {
           confidence: this.calculateContradictionConfidence(match, response),
           source: 'explicit',
           context: this.extractSurroundingContext(response, match),
-          relatedPatterns: [SocraticPatternType.CONSISTENCY_TESTING, SocraticPatternType.NECESSITY_TESTING],
+          relatedPatterns: [PatternType.CONSISTENCY_TESTING, PatternType.NECESSITY_TESTING],
         });
       }
     }
@@ -386,7 +386,7 @@ export class ResponseAnalyzer {
           confidence: this.calculateRequirementConfidence(match, response),
           source: 'explicit',
           context: this.extractSurroundingContext(response, match),
-          relatedPatterns: [SocraticPatternType.NECESSITY_TESTING, SocraticPatternType.CONCRETE_INSTANTIATION],
+          relatedPatterns: [PatternType.NECESSITY_TESTING, PatternType.CONCRETE_INSTANTIATION],
         });
       }
     }
@@ -415,7 +415,7 @@ export class ResponseAnalyzer {
           confidence: this.calculateConstraintConfidence(match, response),
           source: 'explicit',
           context: this.extractSurroundingContext(response, match),
-          relatedPatterns: [SocraticPatternType.NECESSITY_TESTING, SocraticPatternType.IMPACT_ANALYSIS],
+          relatedPatterns: [PatternType.NECESSITY_TESTING, PatternType.IMPACT_ANALYSIS],
         });
       }
     }
@@ -643,7 +643,7 @@ export class ResponseAnalyzer {
           confidence: 0.8,
           source: 'inferred',
           context: focus,
-          relatedPatterns: [SocraticPatternType.DEFINITION_SEEKING],
+          relatedPatterns: [PatternType.DEFINITION_SEEKING],
         });
       }
     }
@@ -664,7 +664,7 @@ export class ResponseAnalyzer {
           confidence: 0.5,
           source: 'implicit',
           context: statement,
-          relatedPatterns: [SocraticPatternType.ASSUMPTION_EXCAVATION],
+          relatedPatterns: [PatternType.ASSUMPTION_EXCAVATION],
         });
       }
     }
@@ -685,7 +685,7 @@ export class ResponseAnalyzer {
         confidence: 0.7,
         source: 'inferred',
         context: response,
-        relatedPatterns: [SocraticPatternType.CONSISTENCY_TESTING],
+        relatedPatterns: [PatternType.CONSISTENCY_TESTING],
       });
     }
     
@@ -703,23 +703,23 @@ export class ResponseAnalyzer {
   }
 
   private suggestFollowUpPatterns(
-    _currentPattern: SocraticPatternType,
+    _currentPattern: PatternType,
     concepts: string[],
     assumptions: string[],
     contradictions: string[]
-  ): SocraticPatternType[] {
-    const suggestions: SocraticPatternType[] = [];
+  ): PatternType[] {
+    const suggestions: PatternType[] = [];
     
     if (concepts.length > 0) {
-      suggestions.push(SocraticPatternType.DEFINITION_SEEKING, SocraticPatternType.CONCEPTUAL_CLARITY);
+      suggestions.push(PatternType.DEFINITION_SEEKING, PatternType.CONCEPTUAL_CLARITY);
     }
     
     if (assumptions.length > 0) {
-      suggestions.push(SocraticPatternType.ASSUMPTION_EXCAVATION, SocraticPatternType.CONSISTENCY_TESTING);
+      suggestions.push(PatternType.ASSUMPTION_EXCAVATION, PatternType.CONSISTENCY_TESTING);
     }
     
     if (contradictions.length > 0) {
-      suggestions.push(SocraticPatternType.CONSISTENCY_TESTING, SocraticPatternType.NECESSITY_TESTING);
+      suggestions.push(PatternType.CONSISTENCY_TESTING, PatternType.NECESSITY_TESTING);
     }
     
     return [...new Set(suggestions)].slice(0, 3);
@@ -727,14 +727,14 @@ export class ResponseAnalyzer {
 
   private getPatternSpecificFollowUps(
     insight: InsightExtraction,
-    _currentPattern: SocraticPatternType,
+    _currentPattern: PatternType,
     characteristics: ResponseCharacteristics
   ): FollowUpRecommendation[] {
     const recommendations: FollowUpRecommendation[] = [];
     
     if (insight.type === 'concept' && characteristics.specificity < 0.5) {
       recommendations.push({
-        pattern: SocraticPatternType.CONCRETE_INSTANTIATION,
+        pattern: PatternType.CONCRETE_INSTANTIATION,
         priority: 0.8,
         reason: 'Concept mentioned but needs concrete example',
         targetInsight: insight.content,
@@ -744,7 +744,7 @@ export class ResponseAnalyzer {
     
     if (insight.type === 'assumption' && characteristics.defensiveness < 0.3) {
       recommendations.push({
-        pattern: SocraticPatternType.CONSISTENCY_TESTING,
+        pattern: PatternType.CONSISTENCY_TESTING,
         priority: 0.9,
         reason: 'Assumption identified and user seems open to examination',
         targetInsight: insight.content,
@@ -764,7 +764,7 @@ export class ResponseAnalyzer {
     
     if (context.category === ContextCategory.REQUIREMENTS_REFINEMENT && characteristics.specificity < 0.6) {
       recommendations.push({
-        pattern: SocraticPatternType.CONCRETE_INSTANTIATION,
+        pattern: PatternType.CONCRETE_INSTANTIATION,
         priority: 0.85,
         reason: 'Requirements need more specific details',
         targetInsight: 'specification detail',
@@ -783,7 +783,7 @@ export class ResponseAnalyzer {
     
     if (characteristics.engagement < 0.5) {
       recommendations.push({
-        pattern: SocraticPatternType.VALUE_CLARIFICATION,
+        pattern: PatternType.VALUE_CLARIFICATION,
         priority: 0.7,
         reason: 'Low engagement - explore what matters to user',
         targetInsight: 'user motivation',

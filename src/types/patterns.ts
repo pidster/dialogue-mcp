@@ -1,13 +1,13 @@
 /**
- * Socratic question pattern types for structured dialogue
+ * Question pattern types for structured dialogue
  */
 
 import { BaseEntity, UUID, ConfidenceLevel, ContextCategory, ExpertiseLevel } from './common.js';
 
 /**
- * The 10 Socratic question pattern types from the design document
+ * The 10 question pattern types from the design document
  */
-export enum SocraticPatternType {
+export enum PatternType {
   DEFINITION_SEEKING = 'definition_seeking',
   ASSUMPTION_EXCAVATION = 'assumption_excavation',
   CONSISTENCY_TESTING = 'consistency_testing',
@@ -47,7 +47,7 @@ export interface QuestionVariable {
 export interface FollowUpPattern {
   readonly triggerType: 'assumption_detected' | 'vague_answer' | 'contradiction' | 'new_concept';
   readonly triggerPattern: string; // Regex or keyword pattern
-  readonly nextPatternType: SocraticPatternType;
+  readonly nextPatternType: PatternType;
   readonly priority: ConfidenceLevel;
 }
 
@@ -64,7 +64,7 @@ export interface ExpectedInsight {
  * Core question pattern definition
  */
 export interface QuestionPattern extends BaseEntity {
-  readonly type: SocraticPatternType;
+  readonly type: PatternType;
   readonly name: string;
   readonly description: string;
   readonly template: string; // Template with variables like {{concept}} or {{assumption}}
@@ -83,7 +83,7 @@ export interface QuestionPattern extends BaseEntity {
  */
 export interface GeneratedQuestion extends BaseEntity {
   readonly patternId: UUID;
-  readonly patternType: SocraticPatternType;
+  readonly patternType: PatternType;
   readonly text: string;
   readonly context: QuestionContext;
   readonly variables: Record<string, string>; // Resolved variable values
@@ -124,7 +124,7 @@ export interface ResponseAnalysis {
   readonly identifiedContradictions: readonly string[];
   readonly clarityScore: ConfidenceLevel; // How clear/specific the response was
   readonly completenessScore: ConfidenceLevel; // How complete the response was
-  readonly suggestedFollowUps: readonly SocraticPatternType[];
+  readonly suggestedFollowUps: readonly PatternType[];
   readonly newInsights: readonly string[];
 }
 
@@ -133,8 +133,8 @@ export interface ResponseAnalysis {
  */
 export interface QuestionSelection {
   readonly context: QuestionContext;
-  readonly excludePatterns?: readonly SocraticPatternType[];
-  readonly preferPatterns?: readonly SocraticPatternType[];
+  readonly excludePatterns?: readonly PatternType[];
+  readonly preferPatterns?: readonly PatternType[];
   readonly maxDepth?: number;
   readonly focusArea?: string;
   readonly urgentInsights?: readonly string[];
@@ -144,7 +144,7 @@ export interface QuestionSelection {
  * Pattern effectiveness metrics
  */
 export interface PatternEffectiveness {
-  readonly patternType: SocraticPatternType;
+  readonly patternType: PatternType;
   readonly timesUsed: number;
   readonly averageInsightQuality: ConfidenceLevel;
   readonly averageUserSatisfaction: ConfidenceLevel;
@@ -164,6 +164,6 @@ export interface DialogueFlow {
   readonly assumptionsUncovered: readonly string[];
   readonly contradictionsFound: readonly string[];
   readonly insightsGained: readonly string[];
-  readonly nextSuggestedPatterns: readonly SocraticPatternType[];
+  readonly nextSuggestedPatterns: readonly PatternType[];
   readonly flowState: 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding';
 }

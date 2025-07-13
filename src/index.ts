@@ -31,11 +31,55 @@ import {
   ProjectPhase,
 } from './types/common.js';
 import { SelectionContext } from './patterns/QuestionSelector.js';
+import logger, { 
+  createSessionLogger,
+  logOperationMetrics,
+  logPatternSelection,
+  logResponseAnalysis,
+  logSessionInsights,
+  logError
+} from './utils/logger.js';
 
 // Express app setup
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  const startTime = Date.now();
+  const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Attach request ID to request
+  (req as any).id = requestId;
+  
+  // Log request
+  logger.info({
+    type: 'http_request',
+    requestId,
+    method: req.method,
+    url: req.url,
+    headers: {
+      'content-type': req.headers['content-type'],
+      'mcp-session-id': req.headers['mcp-session-id'],
+    },
+  }, 'Incoming HTTP request');
+  
+  // Log response when finished
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    logger.info({
+      type: 'http_response',
+      requestId,
+      method: req.method,
+      url: req.url,
+      statusCode: res.statusCode,
+      duration,
+    }, 'HTTP response sent');
+  });
+  
+  next();
+});
 
 // In-memory session storage (in production, use a database)
 const sessions = new Map<string, DialogueSession>();
@@ -54,7 +98,7 @@ const responseAnalyzer = new ResponseAnalyzer(patternLibrary);
 function createMCPServer() {
   const server = new Server(
     {
-      name: 'dialogue-mcp',
+      name: 'socratic-dialogue-mcp-server',
       version: '0.1.0',
     },
     {
@@ -103,7 +147,7 @@ function createMCPServer() {
         },
         {
           name: 'ask_question',
-          description: 'Generate a Socratic question based on current context',
+          description: 'Generate a question based on current context',
           inputSchema: {
             type: 'object',
             properties: {
@@ -182,8 +226,8 @@ function createMCPServer() {
     // Add pattern library resource
     resources.push({
       uri: 'patterns://library',
-      name: 'Socratic Pattern Library',
-      description: 'All available Socratic questioning patterns',
+      name: 'Pattern Library',
+      description: 'All available questioning patterns',
       mimeType: 'application/json',
     });
     
@@ -237,7 +281,18 @@ function createMCPServer() {
     
     switch (name) {
       case 'start_dialogue': {
+        const startTime = Date.now();
         const sessionId = `session-${Date.now()}`;
+        const sessionLogger = createSessionLogger(sessionId);
+        
+        sessionLogger.info({
+          operation: 'start_dialogue',
+          title: args?.title,
+          focus: args?.focus,
+          category: args?.category || 'general',
+          description: args?.description,
+        }, 'Starting new Socratic dialogue session');
+        
         const context: DialogueContext = {
           sessionId,
           currentCategory: (args?.category as ContextCategory) || ContextCategory.GENERAL,
@@ -308,6 +363,11 @@ function createMCPServer() {
         sessions.set(sessionId, session);
         turns.set(sessionId, []);
         
+        logOperationMetrics(sessionLogger, 'start_dialogue', startTime, {
+          title: args?.title,
+          category: session.context.currentCategory,
+        });
+        
         return {
           content: [
             {
@@ -319,10 +379,17 @@ function createMCPServer() {
       }
       
       case 'ask_question': {
+        const startTime = Date.now();
         const session = sessions.get(args?.sessionId as string);
         if (!session) {
+          logError(logger, new Error(`Session not found: ${args?.sessionId}`), {
+            operation: 'ask_question',
+            sessionId: args?.sessionId,
+          });
           throw new Error(`Session not found: ${args?.sessionId}`);
         }
+        
+        const sessionLogger = createSessionLogger(session.sessionId);
         
         const sessionTurns = turns.get(args?.sessionId as string) || [];
         const patternHistory = sessionTurns.map(t => t.questionPattern);
@@ -343,9 +410,22 @@ function createMCPServer() {
         // Select best pattern
         const selection = questionSelector.selectBestPattern(selectionContext);
         
+        // Log pattern selection details
+        logPatternSelection(
+          sessionLogger,
+          selection.selectedPattern,
+          selection.confidence,
+          selection.alternatives.map(a => a.pattern),
+          session.context.conversationFlow
+        );
+        
         // Get pattern details
         const pattern = patternLibrary.getPattern(selection.selectedPattern);
         if (!pattern) {
+          logError(sessionLogger, new Error(`Pattern not found: ${selection.selectedPattern}`), {
+            operation: 'ask_question',
+            pattern: selection.selectedPattern,
+          });
           throw new Error(`Pattern not found: ${selection.selectedPattern}`);
         }
         
@@ -407,6 +487,19 @@ function createMCPServer() {
         // Analyze flow
         const flowAnalysis = flowManager.analyzeFlow(session, sessionTurns, patternHistory);
         
+        sessionLogger.info({
+          operation: 'flow_analysis',
+          turnNumber: turn.turnNumber,
+          flowState: flowAnalysis.currentState,
+          stateConfidence: flowAnalysis.stateConfidence,
+        }, 'Analyzed dialogue flow state');
+        
+        logOperationMetrics(sessionLogger, 'ask_question', startTime, {
+          pattern: selection.selectedPattern,
+          turnNumber: turn.turnNumber,
+          flowState: flowAnalysis.currentState,
+        });
+        
         return {
           content: [
             {
@@ -418,10 +511,17 @@ function createMCPServer() {
       }
       
       case 'submit_response': {
+        const startTime = Date.now();
         const session = sessions.get(args?.sessionId as string);
         if (!session) {
+          logError(logger, new Error(`Session not found: ${args?.sessionId}`), {
+            operation: 'submit_response',
+            sessionId: args?.sessionId,
+          });
           throw new Error(`Session not found: ${args?.sessionId}`);
         }
+        
+        const sessionLogger = createSessionLogger(session.sessionId);
         
         const sessionTurns = turns.get(args?.sessionId as string) || [];
         const currentTurn = sessionTurns[sessionTurns.length - 1];
@@ -459,6 +559,17 @@ function createMCPServer() {
           question,
           args?.response as string,
           question.context
+        );
+        
+        // Log response analysis results
+        logResponseAnalysis(
+          sessionLogger,
+          analysis.clarityScore,
+          analysis.completenessScore,
+          analysis.newInsights.length,
+          [...analysis.extractedConcepts],
+          [...analysis.detectedAssumptions],
+          [...analysis.identifiedContradictions]
         );
         
         // Create updated turn
@@ -518,6 +629,12 @@ function createMCPServer() {
           uncoveredAssumption: analysis.detectedAssumptions.length > 0,
         });
         
+        logOperationMetrics(sessionLogger, 'submit_response', startTime, {
+          responseLength: (args?.response as string).length,
+          insightsGenerated: analysis.newInsights.length,
+          clarity: analysis.clarityScore,
+        });
+        
         return {
           content: [
             {
@@ -529,10 +646,30 @@ function createMCPServer() {
       }
       
       case 'get_session_insights': {
+        const startTime = Date.now();
         const session = sessions.get(args?.sessionId as string);
         if (!session) {
+          logError(logger, new Error(`Session not found: ${args?.sessionId}`), {
+            operation: 'get_session_insights',
+            sessionId: args?.sessionId,
+          });
           throw new Error(`Session not found: ${args?.sessionId}`);
         }
+        
+        const sessionLogger = createSessionLogger(session.sessionId);
+        
+        logSessionInsights(
+          sessionLogger,
+          session.context.turnCount,
+          session.context.currentDepth,
+          {
+            assumptions: session.insights.assumptionsUncovered.length,
+            definitions: session.insights.definitionsClarified.length,
+            contradictions: session.insights.contradictionsFound.length,
+          }
+        );
+        
+        logOperationMetrics(sessionLogger, 'get_session_insights', startTime);
         
         return {
           content: [
@@ -545,15 +682,34 @@ function createMCPServer() {
       }
       
       case 'analyze_flow': {
+        const startTime = Date.now();
         const session = sessions.get(args?.sessionId as string);
         if (!session) {
+          logError(logger, new Error(`Session not found: ${args?.sessionId}`), {
+            operation: 'analyze_flow',
+            sessionId: args?.sessionId,
+          });
           throw new Error(`Session not found: ${args?.sessionId}`);
         }
+        
+        const sessionLogger = createSessionLogger(session.sessionId);
         
         const sessionTurns = turns.get(args?.sessionId as string) || [];
         const patternHistory = sessionTurns.map(t => t.questionPattern);
         
         const analysis = flowManager.analyzeFlow(session, sessionTurns, patternHistory);
+        
+        sessionLogger.info({
+          operation: 'flow_analysis_detailed',
+          currentState: analysis.currentState,
+          stateConfidence: analysis.stateConfidence,
+          stateMetrics: analysis.stateMetrics,
+          progressAssessment: analysis.progressAssessment,
+          recommendationsCount: analysis.recommendations.length,
+          suggestedTransition: analysis.suggestedTransition,
+        }, 'Generated detailed flow analysis');
+        
+        logOperationMetrics(sessionLogger, 'analyze_flow', startTime);
         
         return {
           content: [
@@ -566,6 +722,10 @@ function createMCPServer() {
       }
       
       default:
+        logError(logger, new Error(`Unknown tool: ${name}`), {
+          operation: 'unknown_tool',
+          toolName: name,
+        });
         throw new Error(`Unknown tool: ${name}`);
     }
   });
@@ -577,7 +737,7 @@ function createMCPServer() {
 app.get('/health', (_req, res) => {
   res.json({ 
     status: 'ok', 
-    name: 'dialogue-mcp',
+    name: 'socratic-dialogue-mcp-server',
     version: '0.1.0',
     transport: 'streamable-http',
     sessions: sessions.size,
@@ -635,10 +795,16 @@ app.all('/mcp', async (req, res): Promise<void> => {
     transport.onclose = () => {
       transports.delete(transport.sessionId);
       servers.delete(transport.sessionId);
-      console.log(`Session closed: ${transport.sessionId}`);
+      logger.info({
+        operation: 'session_close',
+        transportSessionId: transport.sessionId,
+      }, 'MCP transport session closed');
     };
     
-    console.log(`New session created: ${transport.sessionId}`);
+    logger.info({
+      operation: 'session_create',
+      transportSessionId: transport.sessionId,
+    }, 'New MCP transport session created');
   }
   
   // Handle the request
@@ -650,9 +816,11 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || 'localhost';
 
 app.listen(Number(PORT), HOST, () => {
-  console.log(`dialogue-mcp (Streamable HTTP) running at http://${HOST}:${PORT}`);
-  console.log(`MCP endpoint: http://${HOST}:${PORT}/mcp`);
-  console.log(`Health check: http://${HOST}:${PORT}/health`);
-  console.log('');
-  console.log('Connect with any MCP client using Streamable HTTP transport.');
+  logger.info({
+    operation: 'server_start',
+    host: HOST,
+    port: PORT,
+    mcpEndpoint: `http://${HOST}:${PORT}/mcp`,
+    healthEndpoint: `http://${HOST}:${PORT}/health`,
+  }, `dialogue-mcp server started on http://${HOST}:${PORT}`);
 });

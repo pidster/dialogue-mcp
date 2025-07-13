@@ -3,7 +3,7 @@
  */
 
 import { PatternLibrary } from '../../../src/patterns/PatternLibrary.js';
-import { SocraticPatternType } from '../../../src/types/patterns.js';
+import { PatternType } from '../../../src/types/patterns.js';
 import { ContextCategory, ExpertiseLevel } from '../../../src/types/common.js';
 
 describe('PatternLibrary', () => {
@@ -14,22 +14,22 @@ describe('PatternLibrary', () => {
   });
 
   describe('constructor', () => {
-    it('should initialize with all 10 Socratic patterns', () => {
+    it('should initialize with all 10 patterns', () => {
       const allPatterns = patternLibrary.getAllPatterns();
       expect(allPatterns).toHaveLength(10);
       
       // Verify all pattern types are present
       const patternTypes = allPatterns.map(p => p.type);
-      expect(patternTypes).toContain(SocraticPatternType.DEFINITION_SEEKING);
-      expect(patternTypes).toContain(SocraticPatternType.ASSUMPTION_EXCAVATION);
-      expect(patternTypes).toContain(SocraticPatternType.CONSISTENCY_TESTING);
-      expect(patternTypes).toContain(SocraticPatternType.CONCRETE_INSTANTIATION);
-      expect(patternTypes).toContain(SocraticPatternType.NECESSITY_TESTING);
-      expect(patternTypes).toContain(SocraticPatternType.CONCEPTUAL_CLARITY);
-      expect(patternTypes).toContain(SocraticPatternType.EPISTEMIC_HUMILITY);
-      expect(patternTypes).toContain(SocraticPatternType.SOLUTION_SPACE_MAPPING);
-      expect(patternTypes).toContain(SocraticPatternType.IMPACT_ANALYSIS);
-      expect(patternTypes).toContain(SocraticPatternType.VALUE_CLARIFICATION);
+      expect(patternTypes).toContain(PatternType.DEFINITION_SEEKING);
+      expect(patternTypes).toContain(PatternType.ASSUMPTION_EXCAVATION);
+      expect(patternTypes).toContain(PatternType.CONSISTENCY_TESTING);
+      expect(patternTypes).toContain(PatternType.CONCRETE_INSTANTIATION);
+      expect(patternTypes).toContain(PatternType.NECESSITY_TESTING);
+      expect(patternTypes).toContain(PatternType.CONCEPTUAL_CLARITY);
+      expect(patternTypes).toContain(PatternType.EPISTEMIC_HUMILITY);
+      expect(patternTypes).toContain(PatternType.SOLUTION_SPACE_MAPPING);
+      expect(patternTypes).toContain(PatternType.IMPACT_ANALYSIS);
+      expect(patternTypes).toContain(PatternType.VALUE_CLARIFICATION);
     });
 
     it('should create patterns with valid structure', () => {
@@ -57,16 +57,16 @@ describe('PatternLibrary', () => {
 
   describe('getPattern', () => {
     it('should return pattern by type', () => {
-      const pattern = patternLibrary.getPattern(SocraticPatternType.DEFINITION_SEEKING);
+      const pattern = patternLibrary.getPattern(PatternType.DEFINITION_SEEKING);
       
       expect(pattern).toBeDefined();
-      expect(pattern?.type).toBe(SocraticPatternType.DEFINITION_SEEKING);
+      expect(pattern?.type).toBe(PatternType.DEFINITION_SEEKING);
       expect(pattern?.name).toBe('Definition Seeking');
       expect(pattern?.template).toContain('{{');
     });
 
     it('should return undefined for invalid pattern type', () => {
-      const pattern = patternLibrary.getPattern('invalid_pattern' as SocraticPatternType);
+      const pattern = patternLibrary.getPattern('invalid_pattern' as PatternType);
       expect(pattern).toBeUndefined();
     });
   });
@@ -118,7 +118,7 @@ describe('PatternLibrary', () => {
   describe('specific pattern validation', () => {
     describe('Definition Seeking pattern', () => {
       it('should have appropriate structure', () => {
-        const pattern = patternLibrary.getPattern(SocraticPatternType.DEFINITION_SEEKING);
+        const pattern = patternLibrary.getPattern(PatternType.DEFINITION_SEEKING);
         
         expect(pattern).toBeDefined();
         expect(pattern?.template).toContain('{{concept}}');
@@ -128,7 +128,7 @@ describe('PatternLibrary', () => {
       });
 
       it('should have relevant examples', () => {
-        const pattern = patternLibrary.getPattern(SocraticPatternType.DEFINITION_SEEKING);
+        const pattern = patternLibrary.getPattern(PatternType.DEFINITION_SEEKING);
         
         expect(pattern?.examples.length).toBeGreaterThan(0);
         pattern?.examples.forEach(example => {
@@ -140,7 +140,7 @@ describe('PatternLibrary', () => {
 
     describe('Assumption Excavation pattern', () => {
       it('should target assumption discovery', () => {
-        const pattern = patternLibrary.getPattern(SocraticPatternType.ASSUMPTION_EXCAVATION);
+        const pattern = patternLibrary.getPattern(PatternType.ASSUMPTION_EXCAVATION);
         
         expect(pattern).toBeDefined();
         expect(pattern?.expectedInsights.some(insight => insight.type === 'assumption')).toBe(true);
@@ -150,7 +150,7 @@ describe('PatternLibrary', () => {
 
     describe('Consistency Testing pattern', () => {
       it('should focus on contradictions', () => {
-        const pattern = patternLibrary.getPattern(SocraticPatternType.CONSISTENCY_TESTING);
+        const pattern = patternLibrary.getPattern(PatternType.CONSISTENCY_TESTING);
         
         expect(pattern).toBeDefined();
         expect(pattern?.expectedInsights.some(insight => insight.type === 'contradiction')).toBe(true);

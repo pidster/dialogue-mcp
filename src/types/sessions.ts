@@ -10,7 +10,7 @@ import {
   ExpertiseLevel,
   ProjectPhase,
 } from './common.js';
-import { SocraticPatternType } from './patterns.js';
+import { PatternType } from './patterns.js';
 import { DecisionStatus } from './decisions.js';
 import { KnowledgeNodeType } from './knowledge.js';
 
@@ -30,7 +30,7 @@ export enum SessionStatus {
 export interface DialogueTurn extends BaseEntity {
   readonly questionId?: UUID;
   readonly questionText: string;
-  readonly questionPattern: SocraticPatternType;
+  readonly questionPattern: PatternType;
   readonly responseText?: string;
   readonly responseAnalysisId?: UUID;
   readonly turnNumber: number;
@@ -75,7 +75,7 @@ export interface SessionConfig {
   readonly maxTurns: number;
   readonly timeLimit?: number; // minutes
   readonly focusAreas: readonly ContextCategory[];
-  readonly enabledPatterns: readonly SocraticPatternType[];
+  readonly enabledPatterns: readonly PatternType[];
   readonly adaptToExpertise: boolean;
   readonly autoFollowUp: boolean;
   readonly requireValidation: boolean;
@@ -102,7 +102,7 @@ export interface DialogueContext {
     | 'concluding';
   readonly activeTopics: readonly string[];
   readonly exploredConcepts: readonly string[];
-  readonly pendingFollowUps: readonly SocraticPatternType[];
+  readonly pendingFollowUps: readonly PatternType[];
   readonly userEngagement: ConfidenceLevel;
   readonly progressTowardsGoals: ConfidenceLevel;
 }
@@ -118,7 +118,7 @@ export interface SessionInsights {
   readonly constraintsDiscovered: readonly string[];
   readonly decisionsInfluenced: readonly UUID[];
   readonly knowledgeNodesCreated: readonly UUID[];
-  readonly patternEffectiveness: Record<SocraticPatternType, ConfidenceLevel>;
+  readonly patternEffectiveness: Record<PatternType, ConfidenceLevel>;
   readonly insightQuality: ConfidenceLevel;
 }
 
@@ -129,7 +129,7 @@ export interface SessionMetrics {
   readonly totalTurns: number;
   readonly averageTurnDuration: number;
   readonly deepestLevel: number;
-  readonly patternsUsed: Record<SocraticPatternType, number>;
+  readonly patternsUsed: Record<PatternType, number>;
   readonly insightsPerTurn: number;
   readonly userSatisfactionAverage: number;
   readonly objectivesCompleted: number;

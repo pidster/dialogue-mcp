@@ -1,5 +1,5 @@
 /**
- * Common types used throughout the Socratic Dialogue MCP Server
+ * Common types used throughout the Dialogue MCP Server
  */
 
 export type UUID = string;

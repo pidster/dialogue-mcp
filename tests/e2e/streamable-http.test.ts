@@ -274,7 +274,7 @@ describe('Streamable HTTP E2E Tests', () => {
       expect(match).toBeTruthy();
     });
 
-    it('should generate a Socratic question', async () => {
+    it('should generate a question', async () => {
       const response = await client.post('/mcp', {
         jsonrpc: '2.0',
         method: 'tools/call',

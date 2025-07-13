@@ -3,7 +3,7 @@
  */
 
 import {
-  SocraticPatternType,
+  PatternType,
   QuestionContext,
 } from '../types/patterns.js';
 import { ContextCategory, ExpertiseLevel, ConfidenceLevel } from '../types/common.js';
@@ -49,7 +49,7 @@ export interface ScoringConfig {
   readonly weights: ScoringWeights;
   readonly expertiseToleranceRange: number; // How many levels up/down to allow
   readonly noveltyImportance: number; // 0-1, how much to value fresh patterns
-  readonly strategicPatterns: Partial<Record<SocraticPatternType, number>>; // Strategic bonuses
+  readonly strategicPatterns: Partial<Record<PatternType, number>>; // Strategic bonuses
 }
 
 /**
@@ -75,9 +75,9 @@ export class PatternScorer {
    * Score a pattern using comprehensive multi-factor analysis
    */
   public scorePattern(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: ScoringContext,
-    recentPatterns: readonly SocraticPatternType[],
+    recentPatterns: readonly PatternType[],
     effectivenessScore: ConfidenceLevel,
     config?: Partial<ScoringConfig>
   ): ScoringFactors & { totalScore: ConfidenceLevel } {
@@ -115,7 +115,7 @@ export class PatternScorer {
    * Calculate context relevance score
    */
   public calculateContextRelevance(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: ScoringContext
   ): ConfidenceLevel {
     const patternInfo = this.patternLibrary.getPattern(pattern);
@@ -149,7 +149,7 @@ export class PatternScorer {
    * Calculate expertise level match score
    */
   public calculateExpertiseMatch(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: ScoringContext,
     config?: Partial<ScoringConfig>
   ): ConfidenceLevel {
@@ -184,7 +184,7 @@ export class PatternScorer {
    * Calculate flow appropriateness score
    */
   public calculateFlowAppropriateness(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: ScoringContext
   ): ConfidenceLevel {
     const flowState = context.conversationFlow || 'exploring';
@@ -211,8 +211,8 @@ export class PatternScorer {
    * Calculate novelty/freshness score
    */
   public calculateNovelty(
-    pattern: SocraticPatternType,
-    recentPatterns: readonly SocraticPatternType[],
+    pattern: PatternType,
+    recentPatterns: readonly PatternType[],
     config?: Partial<ScoringConfig>
   ): ConfidenceLevel {
     const importance = config?.noveltyImportance || 1.0;
@@ -231,7 +231,7 @@ export class PatternScorer {
    * Calculate strategic value score
    */
   public calculateStrategicValue(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: ScoringContext,
     config?: Partial<ScoringConfig>
   ): ConfidenceLevel {
@@ -255,38 +255,38 @@ export class PatternScorer {
   /**
    * Get context-specific pattern preferences
    */
-  private getContextPatternPreferences(): Record<ContextCategory, Partial<Record<SocraticPatternType, number>>> {
+  private getContextPatternPreferences(): Record<ContextCategory, Partial<Record<PatternType, number>>> {
     return {
       [ContextCategory.PROJECT_INCEPTION]: {
-        [SocraticPatternType.DEFINITION_SEEKING]: 0.15,
-        [SocraticPatternType.ASSUMPTION_EXCAVATION]: 0.12,
-        [SocraticPatternType.VALUE_CLARIFICATION]: 0.1,
-        [SocraticPatternType.SOLUTION_SPACE_MAPPING]: 0.08,
+        [PatternType.DEFINITION_SEEKING]: 0.15,
+        [PatternType.ASSUMPTION_EXCAVATION]: 0.12,
+        [PatternType.VALUE_CLARIFICATION]: 0.1,
+        [PatternType.SOLUTION_SPACE_MAPPING]: 0.08,
       },
       [ContextCategory.ARCHITECTURE_REVIEW]: {
-        [SocraticPatternType.CONSISTENCY_TESTING]: 0.15,
-        [SocraticPatternType.NECESSITY_TESTING]: 0.12,
-        [SocraticPatternType.IMPACT_ANALYSIS]: 0.1,
-        [SocraticPatternType.CONCEPTUAL_CLARITY]: 0.08,
+        [PatternType.CONSISTENCY_TESTING]: 0.15,
+        [PatternType.NECESSITY_TESTING]: 0.12,
+        [PatternType.IMPACT_ANALYSIS]: 0.1,
+        [PatternType.CONCEPTUAL_CLARITY]: 0.08,
       },
       [ContextCategory.REQUIREMENTS_REFINEMENT]: {
-        [SocraticPatternType.CONCRETE_INSTANTIATION]: 0.15,
-        [SocraticPatternType.DEFINITION_SEEKING]: 0.12,
-        [SocraticPatternType.CONSISTENCY_TESTING]: 0.1,
+        [PatternType.CONCRETE_INSTANTIATION]: 0.15,
+        [PatternType.DEFINITION_SEEKING]: 0.12,
+        [PatternType.CONSISTENCY_TESTING]: 0.1,
       },
       [ContextCategory.IMPLEMENTATION_PLANNING]: {
-        [SocraticPatternType.IMPACT_ANALYSIS]: 0.15,
-        [SocraticPatternType.NECESSITY_TESTING]: 0.12,
-        [SocraticPatternType.EPISTEMIC_HUMILITY]: 0.1,
+        [PatternType.IMPACT_ANALYSIS]: 0.15,
+        [PatternType.NECESSITY_TESTING]: 0.12,
+        [PatternType.EPISTEMIC_HUMILITY]: 0.1,
       },
       [ContextCategory.CODE_REVIEW]: {
-        [SocraticPatternType.NECESSITY_TESTING]: 0.15,
-        [SocraticPatternType.CONCEPTUAL_CLARITY]: 0.12,
-        [SocraticPatternType.CONSISTENCY_TESTING]: 0.1,
+        [PatternType.NECESSITY_TESTING]: 0.15,
+        [PatternType.CONCEPTUAL_CLARITY]: 0.12,
+        [PatternType.CONSISTENCY_TESTING]: 0.1,
       },
       [ContextCategory.GENERAL]: {
-        [SocraticPatternType.DEFINITION_SEEKING]: 0.05,
-        [SocraticPatternType.ASSUMPTION_EXCAVATION]: 0.05,
+        [PatternType.DEFINITION_SEEKING]: 0.05,
+        [PatternType.ASSUMPTION_EXCAVATION]: 0.05,
       },
     };
   }
@@ -294,30 +294,30 @@ export class PatternScorer {
   /**
    * Get project phase bonus for patterns
    */
-  private getProjectPhaseBonus(pattern: SocraticPatternType, phase: string): number {
-    const phaseBonuses: Record<string, Partial<Record<SocraticPatternType, number>>> = {
+  private getProjectPhaseBonus(pattern: PatternType, phase: string): number {
+    const phaseBonuses: Record<string, Partial<Record<PatternType, number>>> = {
       planning: {
-        [SocraticPatternType.DEFINITION_SEEKING]: 0.1,
-        [SocraticPatternType.ASSUMPTION_EXCAVATION]: 0.08,
-        [SocraticPatternType.VALUE_CLARIFICATION]: 0.06,
+        [PatternType.DEFINITION_SEEKING]: 0.1,
+        [PatternType.ASSUMPTION_EXCAVATION]: 0.08,
+        [PatternType.VALUE_CLARIFICATION]: 0.06,
       },
       design: {
-        [SocraticPatternType.CONSISTENCY_TESTING]: 0.1,
-        [SocraticPatternType.CONCEPTUAL_CLARITY]: 0.08,
-        [SocraticPatternType.SOLUTION_SPACE_MAPPING]: 0.06,
+        [PatternType.CONSISTENCY_TESTING]: 0.1,
+        [PatternType.CONCEPTUAL_CLARITY]: 0.08,
+        [PatternType.SOLUTION_SPACE_MAPPING]: 0.06,
       },
       implementation: {
-        [SocraticPatternType.NECESSITY_TESTING]: 0.1,
-        [SocraticPatternType.CONCRETE_INSTANTIATION]: 0.08,
+        [PatternType.NECESSITY_TESTING]: 0.1,
+        [PatternType.CONCRETE_INSTANTIATION]: 0.08,
       },
       testing: {
-        [SocraticPatternType.CONSISTENCY_TESTING]: 0.1,
-        [SocraticPatternType.IMPACT_ANALYSIS]: 0.08,
+        [PatternType.CONSISTENCY_TESTING]: 0.1,
+        [PatternType.IMPACT_ANALYSIS]: 0.08,
       },
       review: {
-        [SocraticPatternType.IMPACT_ANALYSIS]: 0.1,
-        [SocraticPatternType.VALUE_CLARIFICATION]: 0.08,
-        [SocraticPatternType.EPISTEMIC_HUMILITY]: 0.06,
+        [PatternType.IMPACT_ANALYSIS]: 0.1,
+        [PatternType.VALUE_CLARIFICATION]: 0.08,
+        [PatternType.EPISTEMIC_HUMILITY]: 0.06,
       },
     };
 
@@ -327,7 +327,7 @@ export class PatternScorer {
   /**
    * Calculate alignment with current focus area
    */
-  private calculateFocusAlignment(pattern: SocraticPatternType, focus: string): number {
+  private calculateFocusAlignment(pattern: PatternType, focus: string): number {
     // Simple keyword-based alignment
     const patternKeywords = this.getPatternKeywords(pattern);
     const focusWords = focus.toLowerCase().split(/\s+/);
@@ -342,33 +342,33 @@ export class PatternScorer {
   /**
    * Get flow state to pattern mappings
    */
-  private getFlowPatternMappings(): Record<string, SocraticPatternType[]> {
+  private getFlowPatternMappings(): Record<string, PatternType[]> {
     return {
       exploring: [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.SOLUTION_SPACE_MAPPING,
-        SocraticPatternType.EPISTEMIC_HUMILITY,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.SOLUTION_SPACE_MAPPING,
+        PatternType.EPISTEMIC_HUMILITY,
       ],
       deepening: [
-        SocraticPatternType.CONSISTENCY_TESTING,
-        SocraticPatternType.NECESSITY_TESTING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.CONSISTENCY_TESTING,
+        PatternType.NECESSITY_TESTING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
       clarifying: [
-        SocraticPatternType.CONCRETE_INSTANTIATION,
-        SocraticPatternType.CONCEPTUAL_CLARITY,
-        SocraticPatternType.DEFINITION_SEEKING,
+        PatternType.CONCRETE_INSTANTIATION,
+        PatternType.CONCEPTUAL_CLARITY,
+        PatternType.DEFINITION_SEEKING,
       ],
       synthesizing: [
-        SocraticPatternType.IMPACT_ANALYSIS,
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.CONSISTENCY_TESTING,
+        PatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.CONSISTENCY_TESTING,
       ],
       concluding: [
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
     };
   }
@@ -376,20 +376,20 @@ export class PatternScorer {
   /**
    * Calculate depth appropriateness adjustment
    */
-  private calculateDepthAppropriatenesss(pattern: SocraticPatternType, depth: number): number {
+  private calculateDepthAppropriatenesss(pattern: PatternType, depth: number): number {
     // Shallow depths favor exploration, deep depths favor synthesis
     if (depth <= 2) {
       const explorationPatterns = [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.SOLUTION_SPACE_MAPPING,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.SOLUTION_SPACE_MAPPING,
       ];
       return explorationPatterns.includes(pattern) ? 0.05 : -0.05;
     } else if (depth >= 6) {
       const synthesisPatterns = [
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
-        SocraticPatternType.CONSISTENCY_TESTING,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.IMPACT_ANALYSIS,
+        PatternType.CONSISTENCY_TESTING,
       ];
       return synthesisPatterns.includes(pattern) ? 0.05 : -0.05;
     }
@@ -400,12 +400,12 @@ export class PatternScorer {
   /**
    * Calculate turn count appropriateness
    */
-  private calculateTurnApproppriateness(pattern: SocraticPatternType, turnCount: number): number {
+  private calculateTurnApproppriateness(pattern: PatternType, turnCount: number): number {
     // Long conversations should move toward conclusion
     if (turnCount > 20) {
       const concludingPatterns = [
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.IMPACT_ANALYSIS,
       ];
       return concludingPatterns.includes(pattern) ? 0.1 : -0.05;
     }
@@ -416,13 +416,13 @@ export class PatternScorer {
   /**
    * Get context-specific strategic value
    */
-  private getContextStrategicValue(pattern: SocraticPatternType, context: ScoringContext): number {
+  private getContextStrategicValue(pattern: PatternType, context: ScoringContext): number {
     // Boost patterns that are particularly valuable in current context
-    if (context.extractedConcepts.length === 0 && pattern === SocraticPatternType.DEFINITION_SEEKING) {
+    if (context.extractedConcepts.length === 0 && pattern === PatternType.DEFINITION_SEEKING) {
       return 0.1; // High value when no concepts identified yet
     }
     
-    if (context.detectedAssumptions.length === 0 && pattern === SocraticPatternType.ASSUMPTION_EXCAVATION) {
+    if (context.detectedAssumptions.length === 0 && pattern === PatternType.ASSUMPTION_EXCAVATION) {
       return 0.1; // High value when no assumptions detected yet
     }
     
@@ -432,7 +432,7 @@ export class PatternScorer {
   /**
    * Calculate objective alignment score
    */
-  private calculateObjectiveAlignment(_pattern: SocraticPatternType, _context: ScoringContext): number {
+  private calculateObjectiveAlignment(_pattern: PatternType, _context: ScoringContext): number {
     // This would integrate with session objectives when available
     // For now, return neutral score
     return 0;
@@ -441,18 +441,18 @@ export class PatternScorer {
   /**
    * Get keywords associated with pattern types
    */
-  private getPatternKeywords(pattern: SocraticPatternType): string[] {
-    const keywords: Record<SocraticPatternType, string[]> = {
-      [SocraticPatternType.DEFINITION_SEEKING]: ['define', 'meaning', 'concept', 'term'],
-      [SocraticPatternType.ASSUMPTION_EXCAVATION]: ['assume', 'believe', 'given', 'obvious'],
-      [SocraticPatternType.CONSISTENCY_TESTING]: ['conflict', 'align', 'consistent', 'contradict'],
-      [SocraticPatternType.CONCRETE_INSTANTIATION]: ['example', 'specific', 'instance', 'concrete'],
-      [SocraticPatternType.NECESSITY_TESTING]: ['necessary', 'required', 'essential', 'remove'],
-      [SocraticPatternType.CONCEPTUAL_CLARITY]: ['difference', 'similar', 'distinguish', 'compare'],
-      [SocraticPatternType.EPISTEMIC_HUMILITY]: ['unknown', 'uncertain', 'unclear', 'knowledge'],
-      [SocraticPatternType.SOLUTION_SPACE_MAPPING]: ['alternative', 'option', 'approach', 'solution'],
-      [SocraticPatternType.IMPACT_ANALYSIS]: ['consequence', 'effect', 'impact', 'result'],
-      [SocraticPatternType.VALUE_CLARIFICATION]: ['important', 'priority', 'value', 'goal'],
+  private getPatternKeywords(pattern: PatternType): string[] {
+    const keywords: Record<PatternType, string[]> = {
+      [PatternType.DEFINITION_SEEKING]: ['define', 'meaning', 'concept', 'term'],
+      [PatternType.ASSUMPTION_EXCAVATION]: ['assume', 'believe', 'given', 'obvious'],
+      [PatternType.CONSISTENCY_TESTING]: ['conflict', 'align', 'consistent', 'contradict'],
+      [PatternType.CONCRETE_INSTANTIATION]: ['example', 'specific', 'instance', 'concrete'],
+      [PatternType.NECESSITY_TESTING]: ['necessary', 'required', 'essential', 'remove'],
+      [PatternType.CONCEPTUAL_CLARITY]: ['difference', 'similar', 'distinguish', 'compare'],
+      [PatternType.EPISTEMIC_HUMILITY]: ['unknown', 'uncertain', 'unclear', 'knowledge'],
+      [PatternType.SOLUTION_SPACE_MAPPING]: ['alternative', 'option', 'approach', 'solution'],
+      [PatternType.IMPACT_ANALYSIS]: ['consequence', 'effect', 'impact', 'result'],
+      [PatternType.VALUE_CLARIFICATION]: ['important', 'priority', 'value', 'goal'],
     };
 
     return keywords[pattern] || [];

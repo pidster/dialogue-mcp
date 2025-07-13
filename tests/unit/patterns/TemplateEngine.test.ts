@@ -4,7 +4,7 @@
 
 import { TemplateEngine, VariableExtractor } from '../../../src/patterns/TemplateEngine.js';
 import { QuestionPattern, QuestionContext } from '../../../src/types/patterns.js';
-import { SocraticPatternType } from '../../../src/types/patterns.js';
+import { PatternType } from '../../../src/types/patterns.js';
 import { ContextCategory, ExpertiseLevel } from '../../../src/types/common.js';
 
 describe('TemplateEngine', () => {
@@ -18,7 +18,7 @@ describe('TemplateEngine', () => {
     mockPattern = {
       id: 'test-pattern-1',
       sessionId: 'test-session-1',
-      type: SocraticPatternType.DEFINITION_SEEKING,
+      type: PatternType.DEFINITION_SEEKING,
       name: 'Test Definition Pattern',
       description: 'A test pattern for definition seeking',
       template: 'What do you mean by {{concept}}? How does {{concept}} relate to {{area}}?',
@@ -391,7 +391,7 @@ describe('TemplateEngine', () => {
     it('should generate alternatives for definition seeking patterns', () => {
       const definitionPattern = {
         ...mockPattern,
-        type: SocraticPatternType.DEFINITION_SEEKING,
+        type: PatternType.DEFINITION_SEEKING,
         template: 'What is {{concept}}?',
       };
 

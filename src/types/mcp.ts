@@ -4,7 +4,7 @@
 
 import { UUID, ConfidenceLevel } from './common.js';
 import { Decision, DecisionStatus, DecisionQuery } from './decisions.js';
-import { QuestionPattern, SocraticPatternType } from './patterns.js';
+import { QuestionPattern, PatternType } from './patterns.js';
 import { DialogueSession } from './sessions.js';
 import { KnowledgeNode, KnowledgeNodeType, GraphQuery } from './knowledge.js';
 
@@ -114,12 +114,12 @@ export interface McpDialogueTools {
       context?: string;
       focusArea?: string;
       maxDepth?: number;
-      preferredPatterns?: SocraticPatternType[];
-      excludePatterns?: SocraticPatternType[];
+      preferredPatterns?: PatternType[];
+      excludePatterns?: PatternType[];
     };
     result: {
       question: string;
-      pattern: SocraticPatternType;
+      pattern: PatternType;
       depth: number;
       expectedInsights: string[];
       questionId: UUID;
@@ -141,7 +141,7 @@ export interface McpDialogueTools {
         detectedAssumptions: string[];
         identifiedContradictions: string[];
         clarityScore: ConfidenceLevel;
-        suggestedFollowUps: SocraticPatternType[];
+        suggestedFollowUps: PatternType[];
       };
       generatedInsights: string[];
       createdKnowledgeNodes: UUID[];
@@ -240,7 +240,7 @@ export interface McpQuestionPatternResources {
    * Get specific pattern by type
    */
   'question-pattern': {
-    uri: `question-patterns://${SocraticPatternType}`;
+    uri: `question-patterns://${PatternType}`;
     mimeType: 'application/json';
     content: QuestionPattern;
   };
@@ -252,7 +252,7 @@ export interface McpQuestionPatternResources {
     uri: 'question-patterns://effectiveness';
     mimeType: 'application/json';
     content: Record<
-      SocraticPatternType,
+      PatternType,
       {
         timesUsed: number;
         averageInsightQuality: ConfidenceLevel;

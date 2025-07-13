@@ -4,7 +4,7 @@
 
 import { DialogueFlowManager, DialogueFlowState } from '../../../src/dialogue/DialogueFlowManager.js';
 import { DialogueSession, DialogueTurn, DialogueContext, SessionStatus } from '../../../src/types/sessions.js';
-import { SocraticPatternType } from '../../../src/types/patterns.js';
+import { PatternType } from '../../../src/types/patterns.js';
 import { ContextCategory, ProjectPhase } from '../../../src/types/common.js';
 
 describe('DialogueFlowManager', () => {
@@ -43,7 +43,7 @@ describe('DialogueFlowManager', () => {
         maxTurns: 50,
         timeLimit: 60,
         focusAreas: [ContextCategory.PROJECT_INCEPTION],
-        enabledPatterns: Object.values(SocraticPatternType),
+        enabledPatterns: Object.values(PatternType),
         adaptToExpertise: true,
         autoFollowUp: true,
         requireValidation: false,
@@ -70,7 +70,7 @@ describe('DialogueFlowManager', () => {
         constraintsDiscovered: ['must integrate with existing system'],
         decisionsInfluenced: [],
         knowledgeNodesCreated: [],
-        patternEffectiveness: {} as Record<SocraticPatternType, number>,
+        patternEffectiveness: {} as Record<PatternType, number>,
         insightQuality: 0.7,
       },
       metrics: {
@@ -78,9 +78,9 @@ describe('DialogueFlowManager', () => {
         averageTurnDuration: 30000,
         deepestLevel: 3,
         patternsUsed: {
-          [SocraticPatternType.DEFINITION_SEEKING]: 2,
-          [SocraticPatternType.ASSUMPTION_EXCAVATION]: 1,
-        } as Record<SocraticPatternType, number>,
+          [PatternType.DEFINITION_SEEKING]: 2,
+          [PatternType.ASSUMPTION_EXCAVATION]: 1,
+        } as Record<PatternType, number>,
         insightsPerTurn: 1.2,
         userSatisfactionAverage: 4.0,
         objectivesCompleted: 0,
@@ -102,7 +102,7 @@ describe('DialogueFlowManager', () => {
         sessionId: 'test-session-1',
         questionId: 'q-1',
         questionText: 'What do you mean by authentication?',
-        questionPattern: SocraticPatternType.DEFINITION_SEEKING,
+        questionPattern: PatternType.DEFINITION_SEEKING,
         responseText: 'Authentication is verifying user identity',
         turnNumber: 1,
         depth: 1,
@@ -118,7 +118,7 @@ describe('DialogueFlowManager', () => {
         sessionId: 'test-session-1',
         questionId: 'q-2',
         questionText: 'What assumptions are you making about users?',
-        questionPattern: SocraticPatternType.ASSUMPTION_EXCAVATION,
+        questionPattern: PatternType.ASSUMPTION_EXCAVATION,
         responseText: 'We assume users have unique email addresses',
         turnNumber: 2,
         depth: 2,
@@ -134,7 +134,7 @@ describe('DialogueFlowManager', () => {
         sessionId: 'test-session-1',
         questionId: 'q-3',
         questionText: 'How does this definition apply to your system?',
-        questionPattern: SocraticPatternType.CONCRETE_INSTANTIATION,
+        questionPattern: PatternType.CONCRETE_INSTANTIATION,
         responseText: 'Users will log in with email and password',
         turnNumber: 3,
         depth: 2,
@@ -168,9 +168,9 @@ describe('DialogueFlowManager', () => {
   describe('analyzeFlow', () => {
     it('should analyze current dialogue flow state', () => {
       const patternHistory = [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.CONCRETE_INSTANTIATION,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.CONCRETE_INSTANTIATION,
       ];
 
       const analysis = flowManager.analyzeFlow(mockSession, mockTurns, patternHistory);
@@ -187,9 +187,9 @@ describe('DialogueFlowManager', () => {
 
     it('should calculate state metrics correctly', () => {
       const patternHistory = [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.CONCRETE_INSTANTIATION,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.CONCRETE_INSTANTIATION,
       ];
 
       const analysis = flowManager.analyzeFlow(mockSession, mockTurns, patternHistory);
@@ -204,7 +204,7 @@ describe('DialogueFlowManager', () => {
     });
 
     it('should assess progress accurately', () => {
-      const patternHistory = [SocraticPatternType.DEFINITION_SEEKING];
+      const patternHistory = [PatternType.DEFINITION_SEEKING];
       const analysis = flowManager.analyzeFlow(mockSession, mockTurns, patternHistory);
 
       expect(analysis.progressAssessment.overallProgress).toBeGreaterThanOrEqual(0);
@@ -229,7 +229,7 @@ describe('DialogueFlowManager', () => {
         turnNumber: i + 1,
       }));
 
-      const patternHistory = new Array(10).fill(SocraticPatternType.DEFINITION_SEEKING);
+      const patternHistory = new Array(10).fill(PatternType.DEFINITION_SEEKING);
       
       const analysis = flowManager.analyzeFlow(exploringSession, manyTurns, patternHistory);
       
@@ -241,7 +241,7 @@ describe('DialogueFlowManager', () => {
     });
 
     it('should provide recommendations based on current state', () => {
-      const patternHistory = [SocraticPatternType.DEFINITION_SEEKING];
+      const patternHistory = [PatternType.DEFINITION_SEEKING];
       const analysis = flowManager.analyzeFlow(mockSession, mockTurns, patternHistory);
 
       expect(analysis.recommendations.length).toBeGreaterThan(0);
@@ -316,8 +316,8 @@ describe('DialogueFlowManager', () => {
       const patterns = flowManager.getPreferredPatterns('exploring');
       
       expect(patterns.length).toBeGreaterThan(0);
-      expect(patterns).toContain(SocraticPatternType.DEFINITION_SEEKING);
-      expect(patterns).toContain(SocraticPatternType.ASSUMPTION_EXCAVATION);
+      expect(patterns).toContain(PatternType.DEFINITION_SEEKING);
+      expect(patterns).toContain(PatternType.ASSUMPTION_EXCAVATION);
     });
 
     it('should return different patterns for different states', () => {
@@ -327,7 +327,7 @@ describe('DialogueFlowManager', () => {
       expect(exploringPatterns).not.toEqual(synthesizingPatterns);
       
       // Synthesizing should include patterns like VALUE_CLARIFICATION
-      expect(synthesizingPatterns).toContain(SocraticPatternType.VALUE_CLARIFICATION);
+      expect(synthesizingPatterns).toContain(PatternType.VALUE_CLARIFICATION);
     });
 
     it('should return patterns for all defined states', () => {
@@ -337,7 +337,7 @@ describe('DialogueFlowManager', () => {
         const patterns = flowManager.getPreferredPatterns(state);
         expect(patterns.length).toBeGreaterThan(0);
         patterns.forEach(pattern => {
-          expect(Object.values(SocraticPatternType)).toContain(pattern);
+          expect(Object.values(PatternType)).toContain(pattern);
         });
       });
     });
@@ -347,7 +347,7 @@ describe('DialogueFlowManager', () => {
     it('should recommend transition when maximum turns reached', () => {
       const longStateMetrics = {
         turnsInState: 15, // Exceeds default max for exploring (12)
-        patternsUsed: {} as Record<SocraticPatternType, number>,
+        patternsUsed: {} as Record<PatternType, number>,
         insightsGenerated: 3,
         averageDepth: 2,
         varietyScore: 0.6,
@@ -364,7 +364,7 @@ describe('DialogueFlowManager', () => {
     it('should recommend transition when sufficient insights achieved', () => {
       const insightfulMetrics = {
         turnsInState: 5,
-        patternsUsed: {} as Record<SocraticPatternType, number>,
+        patternsUsed: {} as Record<PatternType, number>,
         insightsGenerated: 5, // Above minimum for exploring (2)
         averageDepth: 2,
         varietyScore: 0.8,
@@ -382,7 +382,7 @@ describe('DialogueFlowManager', () => {
     it('should recommend transition when effectiveness is low', () => {
       const ineffectiveMetrics = {
         turnsInState: 8, // More than 5 turns
-        patternsUsed: {} as Record<SocraticPatternType, number>,
+        patternsUsed: {} as Record<PatternType, number>,
         insightsGenerated: 1,
         averageDepth: 1,
         varietyScore: 0.3,
@@ -399,7 +399,7 @@ describe('DialogueFlowManager', () => {
     it('should not recommend transition when current state is productive', () => {
       const productiveMetrics = {
         turnsInState: 3, // Within limits
-        patternsUsed: {} as Record<SocraticPatternType, number>,
+        patternsUsed: {} as Record<PatternType, number>,
         insightsGenerated: 1, // Below minimum required (2)
         averageDepth: 2,
         varietyScore: 0.7,
@@ -436,18 +436,18 @@ describe('DialogueFlowManager', () => {
     it('should have appropriate pattern preferences for each state', () => {
       // Exploring should prefer discovery patterns
       const exploringPatterns = flowManager.getPreferredPatterns('exploring');
-      expect(exploringPatterns).toContain(SocraticPatternType.DEFINITION_SEEKING);
-      expect(exploringPatterns).toContain(SocraticPatternType.ASSUMPTION_EXCAVATION);
+      expect(exploringPatterns).toContain(PatternType.DEFINITION_SEEKING);
+      expect(exploringPatterns).toContain(PatternType.ASSUMPTION_EXCAVATION);
       
       // Deepening should prefer analysis patterns
       const deepeningPatterns = flowManager.getPreferredPatterns('deepening');
-      expect(deepeningPatterns).toContain(SocraticPatternType.CONSISTENCY_TESTING);
-      expect(deepeningPatterns).toContain(SocraticPatternType.NECESSITY_TESTING);
+      expect(deepeningPatterns).toContain(PatternType.CONSISTENCY_TESTING);
+      expect(deepeningPatterns).toContain(PatternType.NECESSITY_TESTING);
       
       // Concluding should prefer synthesis patterns
       const concludingPatterns = flowManager.getPreferredPatterns('concluding');
-      expect(concludingPatterns).toContain(SocraticPatternType.VALUE_CLARIFICATION);
-      expect(concludingPatterns).toContain(SocraticPatternType.IMPACT_ANALYSIS);
+      expect(concludingPatterns).toContain(PatternType.VALUE_CLARIFICATION);
+      expect(concludingPatterns).toContain(PatternType.IMPACT_ANALYSIS);
     });
   });
 
@@ -480,7 +480,7 @@ describe('DialogueFlowManager', () => {
         turnNumber: i + 1,
       }));
 
-      const longPatternHistory = new Array(100).fill(SocraticPatternType.DEFINITION_SEEKING);
+      const longPatternHistory = new Array(100).fill(PatternType.DEFINITION_SEEKING);
       
       const analysis = flowManager.analyzeFlow(mockSession, longTurns, longPatternHistory);
       
@@ -507,7 +507,7 @@ describe('DialogueFlowManager', () => {
       const startTime = Date.now();
       
       for (let i = 0; i < 50; i++) {
-        flowManager.analyzeFlow(mockSession, mockTurns, [SocraticPatternType.DEFINITION_SEEKING]);
+        flowManager.analyzeFlow(mockSession, mockTurns, [PatternType.DEFINITION_SEEKING]);
       }
       
       const endTime = Date.now();

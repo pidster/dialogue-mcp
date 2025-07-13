@@ -1,15 +1,15 @@
 /**
- * Core pattern library implementing all 10 Socratic questioning patterns
+ * Core pattern library implementing all 10 questioning patterns
  */
 
-import { QuestionPattern, SocraticPatternType } from '../types/patterns.js';
+import { QuestionPattern, PatternType } from '../types/patterns.js';
 import { ContextCategory, ExpertiseLevel } from '../types/common.js';
 
 /**
- * Pattern library containing all implemented Socratic questioning patterns
+ * Pattern library containing all implemented questioning patterns
  */
 export class PatternLibrary {
-  private readonly patterns: Map<SocraticPatternType, QuestionPattern>;
+  private readonly patterns: Map<PatternType, QuestionPattern>;
 
   constructor() {
     this.patterns = new Map();
@@ -26,7 +26,7 @@ export class PatternLibrary {
   /**
    * Get specific pattern by type
    */
-  public getPattern(type: SocraticPatternType): QuestionPattern | undefined {
+  public getPattern(type: PatternType): QuestionPattern | undefined {
     return this.patterns.get(type);
   }
 
@@ -49,12 +49,12 @@ export class PatternLibrary {
    */
   private initializePatterns(): void {
     // 1. Definition-Seeking Pattern
-    this.patterns.set(SocraticPatternType.DEFINITION_SEEKING, {
+    this.patterns.set(PatternType.DEFINITION_SEEKING, {
       id: 'pattern-definition-seeking',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.DEFINITION_SEEKING,
+      type: PatternType.DEFINITION_SEEKING,
       name: 'Definition Seeking',
       description: 'Clarifies vague terminology and undefined concepts',
       template: 'What exactly do you mean by {{concept}}?',
@@ -87,7 +87,7 @@ export class PatternLibrary {
         {
           triggerType: 'vague_answer',
           triggerPattern: 'sort of|kind of|basically|generally',
-          nextPatternType: SocraticPatternType.CONCRETE_INSTANTIATION,
+          nextPatternType: PatternType.CONCRETE_INSTANTIATION,
           priority: 0.8,
         },
       ],
@@ -119,12 +119,12 @@ export class PatternLibrary {
     });
 
     // 2. Assumption Excavation Pattern
-    this.patterns.set(SocraticPatternType.ASSUMPTION_EXCAVATION, {
+    this.patterns.set(PatternType.ASSUMPTION_EXCAVATION, {
       id: 'pattern-assumption-excavation',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.ASSUMPTION_EXCAVATION,
+      type: PatternType.ASSUMPTION_EXCAVATION,
       name: 'Assumption Excavation',
       description: 'Uncovers hidden assumptions and implicit beliefs',
       template: 'What assumptions are you making about {{area}}?',
@@ -158,7 +158,7 @@ export class PatternLibrary {
         {
           triggerType: 'assumption_detected',
           triggerPattern: 'assume|obviously|of course|naturally',
-          nextPatternType: SocraticPatternType.CONSISTENCY_TESTING,
+          nextPatternType: PatternType.CONSISTENCY_TESTING,
           priority: 0.85,
         },
       ],
@@ -190,12 +190,12 @@ export class PatternLibrary {
     });
 
     // 3. Consistency Testing Pattern
-    this.patterns.set(SocraticPatternType.CONSISTENCY_TESTING, {
+    this.patterns.set(PatternType.CONSISTENCY_TESTING, {
       id: 'pattern-consistency-testing',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.CONSISTENCY_TESTING,
+      type: PatternType.CONSISTENCY_TESTING,
       name: 'Consistency Testing',
       description: 'Tests for contradictions and logical consistency',
       template: 'How does {{statement1}} align with {{statement2}}?',
@@ -229,7 +229,7 @@ export class PatternLibrary {
         {
           triggerType: 'contradiction',
           triggerPattern: 'but|however|although|despite',
-          nextPatternType: SocraticPatternType.VALUE_CLARIFICATION,
+          nextPatternType: PatternType.VALUE_CLARIFICATION,
           priority: 0.8,
         },
       ],
@@ -261,12 +261,12 @@ export class PatternLibrary {
     });
 
     // 4. Concrete Instantiation Pattern
-    this.patterns.set(SocraticPatternType.CONCRETE_INSTANTIATION, {
+    this.patterns.set(PatternType.CONCRETE_INSTANTIATION, {
       id: 'pattern-concrete-instantiation',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.CONCRETE_INSTANTIATION,
+      type: PatternType.CONCRETE_INSTANTIATION,
       name: 'Concrete Instantiation',
       description: 'Transforms abstract concepts into specific examples',
       template: 'Can you give me a specific example of {{concept}}?',
@@ -300,7 +300,7 @@ export class PatternLibrary {
         {
           triggerType: 'vague_answer',
           triggerPattern: 'depends|varies|different|multiple',
-          nextPatternType: SocraticPatternType.DEFINITION_SEEKING,
+          nextPatternType: PatternType.DEFINITION_SEEKING,
           priority: 0.7,
         },
       ],
@@ -332,12 +332,12 @@ export class PatternLibrary {
     });
 
     // 5. Necessity Testing Pattern
-    this.patterns.set(SocraticPatternType.NECESSITY_TESTING, {
+    this.patterns.set(PatternType.NECESSITY_TESTING, {
       id: 'pattern-necessity-testing',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.NECESSITY_TESTING,
+      type: PatternType.NECESSITY_TESTING,
       name: 'Necessity Testing',
       description: 'Questions the necessity of features and complexity',
       template: 'What would happen if we removed {{component}}?',
@@ -371,7 +371,7 @@ export class PatternLibrary {
         {
           triggerType: 'new_concept',
           triggerPattern: 'need|require|must have|essential',
-          nextPatternType: SocraticPatternType.VALUE_CLARIFICATION,
+          nextPatternType: PatternType.VALUE_CLARIFICATION,
           priority: 0.75,
         },
       ],
@@ -411,12 +411,12 @@ export class PatternLibrary {
    */
   private initializeRemainingPatterns(): void {
     // 6. Conceptual Clarity Pattern
-    this.patterns.set(SocraticPatternType.CONCEPTUAL_CLARITY, {
+    this.patterns.set(PatternType.CONCEPTUAL_CLARITY, {
       id: 'pattern-conceptual-clarity',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.CONCEPTUAL_CLARITY,
+      type: PatternType.CONCEPTUAL_CLARITY,
       name: 'Conceptual Clarity',
       description: 'Clarifies relationships between concepts and ideas',
       template: 'How is {{concept1}} different from {{concept2}}?',
@@ -450,7 +450,7 @@ export class PatternLibrary {
         {
           triggerType: 'vague_answer',
           triggerPattern: 'similar|same|basically',
-          nextPatternType: SocraticPatternType.DEFINITION_SEEKING,
+          nextPatternType: PatternType.DEFINITION_SEEKING,
           priority: 0.8,
         },
       ],
@@ -482,12 +482,12 @@ export class PatternLibrary {
     });
 
     // 7. Epistemic Humility Pattern
-    this.patterns.set(SocraticPatternType.EPISTEMIC_HUMILITY, {
+    this.patterns.set(PatternType.EPISTEMIC_HUMILITY, {
       id: 'pattern-epistemic-humility',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.EPISTEMIC_HUMILITY,
+      type: PatternType.EPISTEMIC_HUMILITY,
       name: 'Epistemic Humility',
       description: 'Acknowledges knowledge boundaries and uncertainties',
       template: "What don't we know about {{area}}?",
@@ -515,7 +515,7 @@ export class PatternLibrary {
         {
           triggerType: 'new_concept',
           triggerPattern: 'unknown|unsure|unclear|uncertain',
-          nextPatternType: SocraticPatternType.IMPACT_ANALYSIS,
+          nextPatternType: PatternType.IMPACT_ANALYSIS,
           priority: 0.8,
         },
       ],
@@ -547,12 +547,12 @@ export class PatternLibrary {
     });
 
     // 8. Solution Space Mapping Pattern
-    this.patterns.set(SocraticPatternType.SOLUTION_SPACE_MAPPING, {
+    this.patterns.set(PatternType.SOLUTION_SPACE_MAPPING, {
       id: 'pattern-solution-space-mapping',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.SOLUTION_SPACE_MAPPING,
+      type: PatternType.SOLUTION_SPACE_MAPPING,
       name: 'Solution Space Mapping',
       description: 'Explores alternative approaches and solutions',
       template: 'What other approaches could solve {{problem}}?',
@@ -586,7 +586,7 @@ export class PatternLibrary {
         {
           triggerType: 'new_concept',
           triggerPattern: 'alternative|different|other way',
-          nextPatternType: SocraticPatternType.IMPACT_ANALYSIS,
+          nextPatternType: PatternType.IMPACT_ANALYSIS,
           priority: 0.75,
         },
       ],
@@ -618,12 +618,12 @@ export class PatternLibrary {
     });
 
     // 9. Impact Analysis Pattern
-    this.patterns.set(SocraticPatternType.IMPACT_ANALYSIS, {
+    this.patterns.set(PatternType.IMPACT_ANALYSIS, {
       id: 'pattern-impact-analysis',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.IMPACT_ANALYSIS,
+      type: PatternType.IMPACT_ANALYSIS,
       name: 'Impact Analysis',
       description: 'Examines consequences and ripple effects',
       template: 'What are the consequences of {{decision}}?',
@@ -657,7 +657,7 @@ export class PatternLibrary {
         {
           triggerType: 'new_concept',
           triggerPattern: 'affect|impact|consequence|result',
-          nextPatternType: SocraticPatternType.VALUE_CLARIFICATION,
+          nextPatternType: PatternType.VALUE_CLARIFICATION,
           priority: 0.7,
         },
       ],
@@ -689,12 +689,12 @@ export class PatternLibrary {
     });
 
     // 10. Value Clarification Pattern
-    this.patterns.set(SocraticPatternType.VALUE_CLARIFICATION, {
+    this.patterns.set(PatternType.VALUE_CLARIFICATION, {
       id: 'pattern-value-clarification',
       createdAt: new Date(),
       updatedAt: new Date(),
       sessionId: 'system',
-      type: SocraticPatternType.VALUE_CLARIFICATION,
+      type: PatternType.VALUE_CLARIFICATION,
       name: 'Value Clarification',
       description: 'Clarifies priorities, values, and trade-offs',
       template: 'Why is {{goal}} important?',
@@ -728,7 +728,7 @@ export class PatternLibrary {
         {
           triggerType: 'new_concept',
           triggerPattern: 'priority|important|valuable|critical',
-          nextPatternType: SocraticPatternType.NECESSITY_TESTING,
+          nextPatternType: PatternType.NECESSITY_TESTING,
           priority: 0.7,
         },
       ],

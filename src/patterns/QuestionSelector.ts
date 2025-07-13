@@ -3,7 +3,7 @@
  */
 
 import {
-  SocraticPatternType,
+  PatternType,
   PatternEffectiveness,
 } from '../types/patterns.js';
 import { DialogueContext } from '../types/sessions.js';
@@ -28,8 +28,8 @@ export interface SelectionContext extends DialogueContext {
  * Constraints for pattern selection
  */
 export interface SelectionConstraints {
-  readonly excludePatterns?: readonly SocraticPatternType[];
-  readonly preferPatterns?: readonly SocraticPatternType[];
+  readonly excludePatterns?: readonly PatternType[];
+  readonly preferPatterns?: readonly PatternType[];
   readonly maxDepth?: number;
   readonly requireFreshPattern?: boolean; // Avoid recently used patterns
   readonly focusOnInsights?: readonly string[]; // Target specific insight types
@@ -39,7 +39,7 @@ export interface SelectionConstraints {
  * Scored pattern candidate
  */
 export interface ScoredPattern {
-  readonly pattern: SocraticPatternType;
+  readonly pattern: PatternType;
   readonly score: ConfidenceLevel;
   readonly reasoning: readonly string[];
   readonly contextRelevance: ConfidenceLevel;
@@ -53,11 +53,11 @@ export interface ScoredPattern {
  * Pattern selection result
  */
 export interface SelectionResult {
-  readonly selectedPattern: SocraticPatternType;
+  readonly selectedPattern: PatternType;
   readonly confidence: ConfidenceLevel;
   readonly alternatives: readonly ScoredPattern[];
   readonly reasoning: readonly string[];
-  readonly suggestedFollowUps: readonly SocraticPatternType[];
+  readonly suggestedFollowUps: readonly PatternType[];
 }
 
 /**
@@ -67,7 +67,7 @@ export interface FlowAnalysis {
   readonly currentState: 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding';
   readonly stateConfidence: ConfidenceLevel;
   readonly suggestedTransition?: 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding' | undefined;
-  readonly patternsUsedInState: readonly SocraticPatternType[];
+  readonly patternsUsedInState: readonly PatternType[];
   readonly averageDepth: number;
   readonly varietyScore: ConfidenceLevel; // How varied the patterns have been
   readonly progressScore: ConfidenceLevel; // How well objectives are being met
@@ -77,7 +77,7 @@ export interface FlowAnalysis {
  * Pattern outcome for learning
  */
 export interface PatternOutcome {
-  readonly pattern: SocraticPatternType;
+  readonly pattern: PatternType;
   readonly context: SelectionContext;
   readonly userSatisfaction?: number; // 1-5 rating
   readonly insightsGenerated: number;
@@ -93,7 +93,7 @@ export interface PatternOutcome {
 export class QuestionSelector {
   private readonly patternLibrary: PatternLibrary;
   private readonly effectivenessData: Map<string, PatternEffectiveness>;
-  private readonly recentPatterns: Map<string, SocraticPatternType[]>; // sessionId -> recent patterns
+  private readonly recentPatterns: Map<string, PatternType[]>; // sessionId -> recent patterns
 
   constructor(patternLibrary: PatternLibrary) {
     this.patternLibrary = patternLibrary;
@@ -150,7 +150,7 @@ export class QuestionSelector {
     scoredPatterns.sort((a, b) => b.score - a.score);
     
     const selected: ScoredPattern[] = [];
-    const usedTypes = new Set<SocraticPatternType>();
+    const usedTypes = new Set<PatternType>();
 
     for (const pattern of scoredPatterns) {
       if (selected.length >= count) break;
@@ -170,7 +170,7 @@ export class QuestionSelector {
    */
   public analyzeDialogueFlow(
     context: SelectionContext,
-    patternHistory: readonly SocraticPatternType[]
+    patternHistory: readonly PatternType[]
   ): FlowAnalysis {
     const currentState = this.determineFlowState(context, patternHistory);
     const stateConfidence = this.calculateStateConfidence(currentState, patternHistory);
@@ -241,7 +241,7 @@ export class QuestionSelector {
    * Get pattern effectiveness for a specific context
    */
   public getPatternEffectiveness(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: SelectionContext
   ): ConfidenceLevel {
     const contextKey = this.getContextKey(context, pattern);
@@ -265,7 +265,7 @@ export class QuestionSelector {
   private filterEligiblePatterns(
     context: SelectionContext,
     constraints?: SelectionConstraints
-  ): SocraticPatternType[] {
+  ): PatternType[] {
     const allPatterns = this.patternLibrary.getAllPatterns();
     
     
@@ -302,7 +302,7 @@ export class QuestionSelector {
    * Score patterns based on multiple factors
    */
   private scorePatterns(
-    patterns: readonly SocraticPatternType[],
+    patterns: readonly PatternType[],
     context: SelectionContext,
     constraints?: SelectionConstraints
   ): ScoredPattern[] {
@@ -356,7 +356,7 @@ export class QuestionSelector {
    * Calculate how relevant a pattern is to the current context
    */
   private calculateContextRelevance(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: SelectionContext
   ): ConfidenceLevel {
     const patternInfo = this.patternLibrary.getPattern(pattern);
@@ -366,28 +366,28 @@ export class QuestionSelector {
     let relevance = patternInfo.contextCategories.includes(context.currentCategory) ? 0.8 : 0.3;
 
     // Boost for specific patterns in specific contexts
-    const contextBoosts: Record<ContextCategory, Partial<Record<SocraticPatternType, number>>> = {
+    const contextBoosts: Record<ContextCategory, Partial<Record<PatternType, number>>> = {
       [ContextCategory.PROJECT_INCEPTION]: {
-        [SocraticPatternType.DEFINITION_SEEKING]: 0.2,
-        [SocraticPatternType.ASSUMPTION_EXCAVATION]: 0.15,
-        [SocraticPatternType.VALUE_CLARIFICATION]: 0.1,
+        [PatternType.DEFINITION_SEEKING]: 0.2,
+        [PatternType.ASSUMPTION_EXCAVATION]: 0.15,
+        [PatternType.VALUE_CLARIFICATION]: 0.1,
       },
       [ContextCategory.ARCHITECTURE_REVIEW]: {
-        [SocraticPatternType.CONSISTENCY_TESTING]: 0.2,
-        [SocraticPatternType.NECESSITY_TESTING]: 0.15,
-        [SocraticPatternType.SOLUTION_SPACE_MAPPING]: 0.1,
+        [PatternType.CONSISTENCY_TESTING]: 0.2,
+        [PatternType.NECESSITY_TESTING]: 0.15,
+        [PatternType.SOLUTION_SPACE_MAPPING]: 0.1,
       },
       [ContextCategory.REQUIREMENTS_REFINEMENT]: {
-        [SocraticPatternType.CONCRETE_INSTANTIATION]: 0.2,
-        [SocraticPatternType.DEFINITION_SEEKING]: 0.15,
+        [PatternType.CONCRETE_INSTANTIATION]: 0.2,
+        [PatternType.DEFINITION_SEEKING]: 0.15,
       },
       [ContextCategory.IMPLEMENTATION_PLANNING]: {
-        [SocraticPatternType.IMPACT_ANALYSIS]: 0.2,
-        [SocraticPatternType.NECESSITY_TESTING]: 0.15,
+        [PatternType.IMPACT_ANALYSIS]: 0.2,
+        [PatternType.NECESSITY_TESTING]: 0.15,
       },
       [ContextCategory.CODE_REVIEW]: {
-        [SocraticPatternType.NECESSITY_TESTING]: 0.2,
-        [SocraticPatternType.CONCEPTUAL_CLARITY]: 0.15,
+        [PatternType.NECESSITY_TESTING]: 0.2,
+        [PatternType.CONCEPTUAL_CLARITY]: 0.15,
       },
       [ContextCategory.GENERAL]: {},
     };
@@ -400,7 +400,7 @@ export class QuestionSelector {
    * Calculate how well pattern matches user expertise
    */
   private calculateExpertiseMatch(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: SelectionContext
   ): ConfidenceLevel {
     const patternInfo = this.patternLibrary.getPattern(pattern);
@@ -425,34 +425,34 @@ export class QuestionSelector {
    * Calculate how appropriate pattern is for current dialogue flow
    */
   private calculateFlowAppropriateness(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     context: SelectionContext
   ): ConfidenceLevel {
     // Patterns appropriate for different flow states
     const flowPatterns = {
       exploring: [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.SOLUTION_SPACE_MAPPING,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.SOLUTION_SPACE_MAPPING,
       ],
       deepening: [
-        SocraticPatternType.CONSISTENCY_TESTING,
-        SocraticPatternType.NECESSITY_TESTING,
-        SocraticPatternType.EPISTEMIC_HUMILITY,
+        PatternType.CONSISTENCY_TESTING,
+        PatternType.NECESSITY_TESTING,
+        PatternType.EPISTEMIC_HUMILITY,
       ],
       clarifying: [
-        SocraticPatternType.CONCRETE_INSTANTIATION,
-        SocraticPatternType.CONCEPTUAL_CLARITY,
-        SocraticPatternType.DEFINITION_SEEKING,
+        PatternType.CONCRETE_INSTANTIATION,
+        PatternType.CONCEPTUAL_CLARITY,
+        PatternType.DEFINITION_SEEKING,
       ],
       synthesizing: [
-        SocraticPatternType.IMPACT_ANALYSIS,
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.CONSISTENCY_TESTING,
+        PatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.CONSISTENCY_TESTING,
       ],
       concluding: [
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
     };
 
@@ -465,7 +465,7 @@ export class QuestionSelector {
   /**
    * Calculate pattern freshness (avoid overuse)
    */
-  private calculateFreshness(pattern: SocraticPatternType, sessionId: string): ConfidenceLevel {
+  private calculateFreshness(pattern: PatternType, sessionId: string): ConfidenceLevel {
     const recent = this.recentPatterns.get(sessionId) || [];
     const recentUsage = recent.filter(p => p === pattern).length;
     
@@ -477,9 +477,9 @@ export class QuestionSelector {
    * Suggest follow-up patterns based on current pattern
    */
   private suggestFollowUpPatterns(
-    currentPattern: SocraticPatternType,
+    currentPattern: PatternType,
     context: SelectionContext
-  ): SocraticPatternType[] {
+  ): PatternType[] {
     const patternInfo = this.patternLibrary.getPattern(currentPattern);
     if (!patternInfo) return [];
 
@@ -514,55 +514,55 @@ export class QuestionSelector {
    * Get context-specific follow-up patterns
    */
   private getContextSpecificFollowUps(
-    currentPattern: SocraticPatternType,
+    currentPattern: PatternType,
     context: SelectionContext
-  ): SocraticPatternType[] {
-    const followUps: SocraticPatternType[] = [];
+  ): PatternType[] {
+    const followUps: PatternType[] = [];
 
     // Context-driven follow-up logic
     switch (currentPattern) {
-      case SocraticPatternType.DEFINITION_SEEKING:
+      case PatternType.DEFINITION_SEEKING:
         // If we got definitions, test for consistency or ask for examples
         if (context.knownDefinitions.length > 0) {
-          followUps.push(SocraticPatternType.CONSISTENCY_TESTING);
-          followUps.push(SocraticPatternType.CONCRETE_INSTANTIATION);
+          followUps.push(PatternType.CONSISTENCY_TESTING);
+          followUps.push(PatternType.CONCRETE_INSTANTIATION);
         }
         break;
 
-      case SocraticPatternType.ASSUMPTION_EXCAVATION:
+      case PatternType.ASSUMPTION_EXCAVATION:
         // If we found assumptions, test their necessity or consistency
         if (context.detectedAssumptions.length > 0) {
-          followUps.push(SocraticPatternType.NECESSITY_TESTING);
-          followUps.push(SocraticPatternType.CONSISTENCY_TESTING);
+          followUps.push(PatternType.NECESSITY_TESTING);
+          followUps.push(PatternType.CONSISTENCY_TESTING);
         }
         break;
 
-      case SocraticPatternType.CONCRETE_INSTANTIATION:
+      case PatternType.CONCRETE_INSTANTIATION:
         // After examples, clarify concepts or test assumptions
-        followUps.push(SocraticPatternType.CONCEPTUAL_CLARITY);
-        followUps.push(SocraticPatternType.ASSUMPTION_EXCAVATION);
+        followUps.push(PatternType.CONCEPTUAL_CLARITY);
+        followUps.push(PatternType.ASSUMPTION_EXCAVATION);
         break;
 
-      case SocraticPatternType.CONSISTENCY_TESTING:
+      case PatternType.CONSISTENCY_TESTING:
         // After finding inconsistencies, clarify values or impacts
-        followUps.push(SocraticPatternType.VALUE_CLARIFICATION);
-        followUps.push(SocraticPatternType.IMPACT_ANALYSIS);
+        followUps.push(PatternType.VALUE_CLARIFICATION);
+        followUps.push(PatternType.IMPACT_ANALYSIS);
         break;
 
-      case SocraticPatternType.NECESSITY_TESTING:
+      case PatternType.NECESSITY_TESTING:
         // After questioning necessity, explore alternatives or impacts
-        followUps.push(SocraticPatternType.SOLUTION_SPACE_MAPPING);
-        followUps.push(SocraticPatternType.IMPACT_ANALYSIS);
+        followUps.push(PatternType.SOLUTION_SPACE_MAPPING);
+        followUps.push(PatternType.IMPACT_ANALYSIS);
         break;
     }
 
     // Context category specific follow-ups
     if (context.currentCategory === ContextCategory.ARCHITECTURE_REVIEW) {
-      followUps.push(SocraticPatternType.IMPACT_ANALYSIS);
-      followUps.push(SocraticPatternType.CONSISTENCY_TESTING);
+      followUps.push(PatternType.IMPACT_ANALYSIS);
+      followUps.push(PatternType.CONSISTENCY_TESTING);
     } else if (context.currentCategory === ContextCategory.REQUIREMENTS_REFINEMENT) {
-      followUps.push(SocraticPatternType.CONCRETE_INSTANTIATION);
-      followUps.push(SocraticPatternType.DEFINITION_SEEKING);
+      followUps.push(PatternType.CONCRETE_INSTANTIATION);
+      followUps.push(PatternType.DEFINITION_SEEKING);
     }
 
     return followUps;
@@ -572,33 +572,33 @@ export class QuestionSelector {
    * Score follow-up pattern relevance
    */
   private scoreFollowUpRelevance(
-    followUpPattern: SocraticPatternType,
-    currentPattern: SocraticPatternType,
+    followUpPattern: PatternType,
+    currentPattern: PatternType,
     context: SelectionContext
   ): ConfidenceLevel {
     let score = 0.5; // Base score
 
     // Boost score for logical progressions
-    const progressions: Partial<Record<SocraticPatternType, SocraticPatternType[]>> = {
-      [SocraticPatternType.DEFINITION_SEEKING]: [
-        SocraticPatternType.CONCRETE_INSTANTIATION,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
+    const progressions: Partial<Record<PatternType, PatternType[]>> = {
+      [PatternType.DEFINITION_SEEKING]: [
+        PatternType.CONCRETE_INSTANTIATION,
+        PatternType.ASSUMPTION_EXCAVATION,
       ],
-      [SocraticPatternType.ASSUMPTION_EXCAVATION]: [
-        SocraticPatternType.CONSISTENCY_TESTING,
-        SocraticPatternType.NECESSITY_TESTING,
+      [PatternType.ASSUMPTION_EXCAVATION]: [
+        PatternType.CONSISTENCY_TESTING,
+        PatternType.NECESSITY_TESTING,
       ],
-      [SocraticPatternType.CONSISTENCY_TESTING]: [
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+      [PatternType.CONSISTENCY_TESTING]: [
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
-      [SocraticPatternType.CONCRETE_INSTANTIATION]: [
-        SocraticPatternType.CONCEPTUAL_CLARITY,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
+      [PatternType.CONCRETE_INSTANTIATION]: [
+        PatternType.CONCEPTUAL_CLARITY,
+        PatternType.ASSUMPTION_EXCAVATION,
       ],
-      [SocraticPatternType.NECESSITY_TESTING]: [
-        SocraticPatternType.SOLUTION_SPACE_MAPPING,
-        SocraticPatternType.IMPACT_ANALYSIS,
+      [PatternType.NECESSITY_TESTING]: [
+        PatternType.SOLUTION_SPACE_MAPPING,
+        PatternType.IMPACT_ANALYSIS,
       ],
     };
 
@@ -616,7 +616,7 @@ export class QuestionSelector {
   /**
    * Track pattern usage for freshness calculation
    */
-  private trackPatternUsage(sessionId: string, pattern: SocraticPatternType): void {
+  private trackPatternUsage(sessionId: string, pattern: PatternType): void {
     const recent = this.recentPatterns.get(sessionId) || [];
     recent.push(pattern);
     
@@ -632,7 +632,7 @@ export class QuestionSelector {
    * Generate reasoning text for pattern score
    */
   private generateReasoningForScore(
-    pattern: SocraticPatternType,
+    pattern: PatternType,
     contextRelevance: ConfidenceLevel,
     expertiseMatch: ConfidenceLevel,
     flowAppropriate: ConfidenceLevel,
@@ -680,18 +680,18 @@ export class QuestionSelector {
   /**
    * Get pattern-specific reasoning
    */
-  private getPatternSpecificReasoning(pattern: SocraticPatternType): string | undefined {
-    const patternReasons: Record<SocraticPatternType, string> = {
-      [SocraticPatternType.DEFINITION_SEEKING]: 'Clarifies ambiguous terminology and establishes common understanding',
-      [SocraticPatternType.ASSUMPTION_EXCAVATION]: 'Uncovers hidden beliefs that may impact decision-making',
-      [SocraticPatternType.CONSISTENCY_TESTING]: 'Identifies potential contradictions in requirements or design',
-      [SocraticPatternType.CONCRETE_INSTANTIATION]: 'Transforms abstract concepts into testable, specific examples',
-      [SocraticPatternType.NECESSITY_TESTING]: 'Questions complexity and identifies truly essential requirements',
-      [SocraticPatternType.CONCEPTUAL_CLARITY]: 'Distinguishes between similar concepts to prevent confusion',
-      [SocraticPatternType.EPISTEMIC_HUMILITY]: 'Acknowledges knowledge gaps and identifies areas needing research',
-      [SocraticPatternType.SOLUTION_SPACE_MAPPING]: 'Explores alternative approaches to avoid premature optimization',
-      [SocraticPatternType.IMPACT_ANALYSIS]: 'Evaluates consequences and ripple effects of decisions',
-      [SocraticPatternType.VALUE_CLARIFICATION]: 'Prioritizes competing objectives and clarifies trade-offs',
+  private getPatternSpecificReasoning(pattern: PatternType): string | undefined {
+    const patternReasons: Record<PatternType, string> = {
+      [PatternType.DEFINITION_SEEKING]: 'Clarifies ambiguous terminology and establishes common understanding',
+      [PatternType.ASSUMPTION_EXCAVATION]: 'Uncovers hidden beliefs that may impact decision-making',
+      [PatternType.CONSISTENCY_TESTING]: 'Identifies potential contradictions in requirements or design',
+      [PatternType.CONCRETE_INSTANTIATION]: 'Transforms abstract concepts into testable, specific examples',
+      [PatternType.NECESSITY_TESTING]: 'Questions complexity and identifies truly essential requirements',
+      [PatternType.CONCEPTUAL_CLARITY]: 'Distinguishes between similar concepts to prevent confusion',
+      [PatternType.EPISTEMIC_HUMILITY]: 'Acknowledges knowledge gaps and identifies areas needing research',
+      [PatternType.SOLUTION_SPACE_MAPPING]: 'Explores alternative approaches to avoid premature optimization',
+      [PatternType.IMPACT_ANALYSIS]: 'Evaluates consequences and ripple effects of decisions',
+      [PatternType.VALUE_CLARIFICATION]: 'Prioritizes competing objectives and clarifies trade-offs',
     };
 
     return patternReasons[pattern];
@@ -735,7 +735,7 @@ export class QuestionSelector {
     };
 
     return {
-      patternType: SocraticPatternType.DEFINITION_SEEKING, // Will be overridden
+      patternType: PatternType.DEFINITION_SEEKING, // Will be overridden
       timesUsed: 0,
       averageInsightQuality: 0.5,
       averageUserSatisfaction: 0.5,
@@ -748,7 +748,7 @@ export class QuestionSelector {
   /**
    * Generate context key for effectiveness tracking
    */
-  private getContextKey(context: SelectionContext, pattern?: SocraticPatternType): string {
+  private getContextKey(context: SelectionContext, pattern?: PatternType): string {
     const patternPart = pattern ? `${pattern}-` : '';
     return `${patternPart}${context.category}-${context.userExpertise}`;
   }
@@ -791,7 +791,7 @@ export class QuestionSelector {
    */
   private determineFlowState(
     context: SelectionContext,
-    patternHistory: readonly SocraticPatternType[]
+    patternHistory: readonly PatternType[]
   ): 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding' {
     // Analyze recent patterns to determine flow state
     const recentPatterns = patternHistory.slice(-5); // Last 5 patterns
@@ -808,22 +808,22 @@ export class QuestionSelector {
     // Classify each recent pattern
     for (const pattern of recentPatterns) {
       switch (pattern) {
-        case SocraticPatternType.DEFINITION_SEEKING:
-        case SocraticPatternType.ASSUMPTION_EXCAVATION:
-        case SocraticPatternType.SOLUTION_SPACE_MAPPING:
+        case PatternType.DEFINITION_SEEKING:
+        case PatternType.ASSUMPTION_EXCAVATION:
+        case PatternType.SOLUTION_SPACE_MAPPING:
           patternCounts.exploring++;
           break;
-        case SocraticPatternType.CONSISTENCY_TESTING:
-        case SocraticPatternType.NECESSITY_TESTING:
-        case SocraticPatternType.EPISTEMIC_HUMILITY:
+        case PatternType.CONSISTENCY_TESTING:
+        case PatternType.NECESSITY_TESTING:
+        case PatternType.EPISTEMIC_HUMILITY:
           patternCounts.deepening++;
           break;
-        case SocraticPatternType.CONCRETE_INSTANTIATION:
-        case SocraticPatternType.CONCEPTUAL_CLARITY:
+        case PatternType.CONCRETE_INSTANTIATION:
+        case PatternType.CONCEPTUAL_CLARITY:
           patternCounts.clarifying++;
           break;
-        case SocraticPatternType.IMPACT_ANALYSIS:
-        case SocraticPatternType.VALUE_CLARIFICATION:
+        case PatternType.IMPACT_ANALYSIS:
+        case PatternType.VALUE_CLARIFICATION:
           patternCounts.synthesizing++;
           break;
       }
@@ -851,39 +851,39 @@ export class QuestionSelector {
    */
   private calculateStateConfidence(
     state: string,
-    patternHistory: readonly SocraticPatternType[]
+    patternHistory: readonly PatternType[]
   ): ConfidenceLevel {
     if (patternHistory.length === 0) return 0.5; // Neutral confidence with no history
     
     const recentPatterns = patternHistory.slice(-5);
     
     // Define expected patterns for each state
-    const statePatterns: Record<string, SocraticPatternType[]> = {
+    const statePatterns: Record<string, PatternType[]> = {
       exploring: [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.SOLUTION_SPACE_MAPPING,
-        SocraticPatternType.EPISTEMIC_HUMILITY,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.SOLUTION_SPACE_MAPPING,
+        PatternType.EPISTEMIC_HUMILITY,
       ],
       deepening: [
-        SocraticPatternType.CONSISTENCY_TESTING,
-        SocraticPatternType.NECESSITY_TESTING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.CONSISTENCY_TESTING,
+        PatternType.NECESSITY_TESTING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
       clarifying: [
-        SocraticPatternType.CONCRETE_INSTANTIATION,
-        SocraticPatternType.CONCEPTUAL_CLARITY,
-        SocraticPatternType.DEFINITION_SEEKING,
+        PatternType.CONCRETE_INSTANTIATION,
+        PatternType.CONCEPTUAL_CLARITY,
+        PatternType.DEFINITION_SEEKING,
       ],
       synthesizing: [
-        SocraticPatternType.IMPACT_ANALYSIS,
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.CONSISTENCY_TESTING,
+        PatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.CONSISTENCY_TESTING,
       ],
       concluding: [
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
     };
 
@@ -912,7 +912,7 @@ export class QuestionSelector {
   private suggestFlowTransition(
     currentState: string,
     context: SelectionContext,
-    patternHistory: readonly SocraticPatternType[]
+    patternHistory: readonly PatternType[]
   ): 'exploring' | 'deepening' | 'clarifying' | 'synthesizing' | 'concluding' | undefined {
     const recentPatterns = patternHistory.slice(-5);
     
@@ -955,33 +955,33 @@ export class QuestionSelector {
   /**
    * Get patterns for a specific flow state
    */
-  private getPatternsForFlowState(state: string): SocraticPatternType[] {
-    const statePatterns: Record<string, SocraticPatternType[]> = {
+  private getPatternsForFlowState(state: string): PatternType[] {
+    const statePatterns: Record<string, PatternType[]> = {
       exploring: [
-        SocraticPatternType.DEFINITION_SEEKING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.SOLUTION_SPACE_MAPPING,
-        SocraticPatternType.EPISTEMIC_HUMILITY,
+        PatternType.DEFINITION_SEEKING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.SOLUTION_SPACE_MAPPING,
+        PatternType.EPISTEMIC_HUMILITY,
       ],
       deepening: [
-        SocraticPatternType.CONSISTENCY_TESTING,
-        SocraticPatternType.NECESSITY_TESTING,
-        SocraticPatternType.ASSUMPTION_EXCAVATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.CONSISTENCY_TESTING,
+        PatternType.NECESSITY_TESTING,
+        PatternType.ASSUMPTION_EXCAVATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
       clarifying: [
-        SocraticPatternType.CONCRETE_INSTANTIATION,
-        SocraticPatternType.CONCEPTUAL_CLARITY,
-        SocraticPatternType.DEFINITION_SEEKING,
+        PatternType.CONCRETE_INSTANTIATION,
+        PatternType.CONCEPTUAL_CLARITY,
+        PatternType.DEFINITION_SEEKING,
       ],
       synthesizing: [
-        SocraticPatternType.IMPACT_ANALYSIS,
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.CONSISTENCY_TESTING,
+        PatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.CONSISTENCY_TESTING,
       ],
       concluding: [
-        SocraticPatternType.VALUE_CLARIFICATION,
-        SocraticPatternType.IMPACT_ANALYSIS,
+        PatternType.VALUE_CLARIFICATION,
+        PatternType.IMPACT_ANALYSIS,
       ],
     };
     
@@ -1009,13 +1009,13 @@ export class QuestionSelector {
   /**
    * Check if dialogue should conclude
    */
-  private shouldConclude(context: SelectionContext, patternHistory: readonly SocraticPatternType[]): boolean {
+  private shouldConclude(context: SelectionContext, patternHistory: readonly PatternType[]): boolean {
     // Should conclude if conversation is long and we have good insights
     return context.turnCount > 15 && 
            context.extractedConcepts.length > 4 &&
            patternHistory.filter(p => 
-             p === SocraticPatternType.VALUE_CLARIFICATION || 
-             p === SocraticPatternType.IMPACT_ANALYSIS
+             p === PatternType.VALUE_CLARIFICATION || 
+             p === PatternType.IMPACT_ANALYSIS
            ).length > 2;
   }
 
@@ -1024,8 +1024,8 @@ export class QuestionSelector {
    */
   private getPatternsUsedInCurrentState(
     state: string,
-    recentPatterns: readonly SocraticPatternType[]
-  ): SocraticPatternType[] {
+    recentPatterns: readonly PatternType[]
+  ): PatternType[] {
     const statePatterns = this.getPatternsForFlowState(state);
     return [...new Set(recentPatterns.filter(p => statePatterns.includes(p)))];
   }
@@ -1033,7 +1033,7 @@ export class QuestionSelector {
   /**
    * Calculate variety score based on pattern diversity
    */
-  private calculateVarietyScore(patternHistory: readonly SocraticPatternType[]): ConfidenceLevel {
+  private calculateVarietyScore(patternHistory: readonly PatternType[]): ConfidenceLevel {
     if (patternHistory.length === 0) return 1.0;
     
     const uniquePatterns = new Set(patternHistory.slice(-10)); // Last 10 patterns
